@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import { Box, Rect } from 'leafer-ui';
 import stores from '@stores';
-import { computedSize, getPosition, getMargin } from '@utils/utils';
+import { computedSize, enhanceImageToHdr, getPosition, getMargin } from '@utils/utils';
 import macosIcon from '@utils/macosIcon';
 import { windowDark, windowLight } from '@utils/windowsIcon';
 import macbookpro16 from '@assets/macbook-pro-16.png';
@@ -61,6 +61,8 @@ const createSnap = debounce(() => {
 
 export default observer(({ parent }) => {
     const bar = useRef(null);
+    const hdrTaskRef = useRef(0);
+    const [hdrImageUrl, setHdrImageUrl] = useState(null);
     const [image, box, container] = useMemo(() => {
         const image = new Rect({
             origin: 'center'
@@ -81,14 +83,35 @@ export default observer(({ parent }) => {
     }, [parent]);
 
     useEffect(() => {
+        const source = stores.editor.img.src;
+        const taskId = hdrTaskRef.current + 1;
+        hdrTaskRef.current = taskId;
+
+        if (!stores.option.hdrEnabled || !source) {
+            setHdrImageUrl(null);
+            return;
+        }
+
+        setHdrImageUrl(null);
+
+        enhanceImageToHdr(source).then((result) => {
+            if (hdrTaskRef.current !== taskId) return;
+            if (!stores.option.hdrEnabled) return;
+            if (stores.editor.img.src !== source) return;
+            setHdrImageUrl(result);
+        });
+    }, [stores.editor.img.src, stores.option.hdrEnabled]);
+
+    useEffect(() => {
+        const displaySrc = stores.option.hdrEnabled && hdrImageUrl ? hdrImageUrl : stores.editor.img.src;
         image.fill = {
             type: 'image',
-            url: stores.editor.img.src,
+            url: displaySrc,
             align: stores.option.mode === 'fit' ? 'center' : 'top',
             mode: stores.option.mode
         };
         createSnap();
-    }, [stores.option.mode]);
+    }, [stores.option.mode, stores.option.hdrEnabled, hdrImageUrl, stores.editor.img.src]);
 
     useEffect(() => {
         if (stores.option.padding === 0 && !info[stores.option.frame]) {
@@ -128,10 +151,6 @@ export default observer(({ parent }) => {
         container.scale = stores.option.scale;
         createSnap();
     }, [stores.option.scale]);
-
-    useEffect(() => {
-        image.url = stores.editor.img.src;
-    }, [stores.editor.img.src]);
 
     useEffect(() => {
         image.scaleX = stores.option.scaleX ? -1 : 1;

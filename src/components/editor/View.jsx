@@ -15,6 +15,7 @@ import { ScrollBar } from '@leafer-in/scroll'
 import { nanoid } from '@utils/utils';
 import HotKeys from './HotKeys';
 import '@leafer-in/view';
+import '@leafer-in/export';
 
 Cursor.set('pencil', { url: pencilPng });
 

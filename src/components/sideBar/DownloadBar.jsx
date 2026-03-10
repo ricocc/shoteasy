@@ -18,7 +18,8 @@ export default observer(() => {
         if (!stores.editor.isEditing) return;
         if (loading) return;
         const option = {
-            pixelRatio: ratio
+            pixelRatio: ratio,
+            blob: true
         };
         if (['jpg', 'webp'].includes(format)) {
             option.quality = 0.9;
@@ -31,23 +32,25 @@ export default observer(() => {
             type: 'loading',
             content: 'Downloading...',
         });
-        await stores.editor.app.tree.export(format, option).then(result => {
+        try {
+            const result = await stores.editor.app.tree.export(format, option);
             let name = `ShotEasy`;
             if (ratio > 1) name += `@${ ratio }`;
-            toDownloadFile(result.data, `${ name }.${ format }`);
+            await toDownloadFile(result.data, `${ name }.${ format }`);
             stores.editor.message.open({
                 key,
                 type: 'success',
                 content: 'Download Success!',
             });
-        }).catch(() => {
+        } catch {
             stores.editor.message.open({
                 key,
                 type: 'error',
                 content: 'Download failed!',
             });
-        })
-        setLoading(false);
+        } finally {
+            setLoading(false);
+        }
     };
     const toCopy = async () => {
         if (!stores.editor.isEditing) return;

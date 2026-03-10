@@ -26,6 +26,7 @@ export default observer(() => {
             stores.option.setWaterImg(null);
         }
     }, [useWater, waterCont, waterColor, direction]);
+
     return (
         <>
             <div className="[&_label]:font-semibold [&_label]:text-sm flex gap-4 items-center justify-between">
@@ -54,6 +55,10 @@ export default observer(() => {
                     </div>
                 </div>
             }
+            <div className="[&_label]:font-semibold [&_label]:text-sm flex gap-4 items-center justify-between pt-4">
+                <label>HDR</label>
+                <Switch checked={stores.option.hdrEnabled} onChange={(checked) => stores.option.setHdrEnabled(checked)} size="small" className="bg-slate-200" />
+            </div>
         </>
     )
 });
