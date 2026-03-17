@@ -1,8 +1,11 @@
 import { defineConfig } from 'vite';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
 import path from 'path';
 import react from '@vitejs/plugin-react-swc';
 
-import pkg from './package.json' assert {type: 'json'};
+const pkg = JSON.parse(readFileSync(new URL('./package.json', import.meta.url), 'utf8'));
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const resolve = (url) => path.resolve(__dirname, url);
 const type = process.env.NODE_TYPE;

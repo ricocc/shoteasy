@@ -13,7 +13,7 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "build:lib": "NODE_TYPE=lib vite build",
+    "build:lib": "cross-env NODE_TYPE=lib vite build",
     "lint": "eslint . --ext js,jsx --report-unused-disable-directives --max-warnings 0",
     "preview": "vite preview",
     "release": "npm publish"
@@ -30,6 +30,7 @@
     "@emoji-mart/react": "^1.1.1",
     "@leafer-in/arrow": "^1.0.2",
     "@leafer-in/editor": "^1.0.2",
+    "@leafer-in/export": "^1.6.7",
     "@leafer-in/scroll": "^1.0.2",
     "@leafer-in/view": "^1.0.2",
     "antd": "^5.19.1",
@@ -54,6 +55,7 @@
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react-swc": "^3.5.0",
     "autoprefixer": "^10.4.19",
+    "cross-env": "^10.1.0",
     "eslint": "^8.57.0",
     "eslint-plugin-react": "^7.34.2",
     "eslint-plugin-react-hooks": "^4.6.2",

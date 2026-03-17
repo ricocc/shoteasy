@@ -27,15 +27,37 @@ export const nanoid = customAlphabet(
     7
 );
 
-export const toDownloadFile = (url, name) => {
-    let tmpLink = document.createElement('a');
-    tmpLink.href = url;
+export const toDownloadFile = async (data, name) => {
+    let objectUrl = '';
+    let href = '';
+
+    if (data instanceof Blob) {
+        objectUrl = URL.createObjectURL(data);
+        href = objectUrl;
+    } else if (typeof data === 'string' && data.startsWith('data:')) {
+        const response = await fetch(data);
+        const blob = await response.blob();
+        objectUrl = URL.createObjectURL(blob);
+        href = objectUrl;
+    } else if (typeof data === 'string') {
+        href = data;
+    } else {
+        throw new Error('Unsupported download payload');
+    }
+
+    const tmpLink = document.createElement('a');
+    tmpLink.href = href;
     tmpLink.download = name;
-    tmpLink.style = 'position: absolute; z-index: -111; visibility: none;';
+    tmpLink.style.position = 'fixed';
+    tmpLink.style.left = '-9999px';
+    tmpLink.style.top = '-9999px';
     document.body.appendChild(tmpLink);
     tmpLink.click();
     document.body.removeChild(tmpLink);
-    tmpLink = null;
+
+    if (objectUrl) {
+        setTimeout(() => URL.revokeObjectURL(objectUrl), 30000);
+    }
 };
 
 export const computedSize = (w, h, maxWidth = 950, maxHeight = 450) => {
@@ -184,6 +206,31 @@ export const text2Svg = ({ text, color, angleDegrees }) => {
             </svg>`;
     const url = svgToDataURL(data);
     return url;
+};
+
+export const enhanceImageToHdr = async (src) => {
+    if (!src) return src;
+    try {
+        const image = await getImage(src);
+        const width = image.naturalWidth || image.width;
+        const height = image.naturalHeight || image.height;
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const context = canvas.getContext('2d');
+        if (!context) return src;
+
+        context.filter = 'saturate(1.35) contrast(1.18) brightness(1.08)';
+        context.drawImage(image, 0, 0, width, height);
+
+        context.globalAlpha = 0.14;
+        context.globalCompositeOperation = 'screen';
+        context.drawImage(canvas, 0, 0, width, height);
+
+        return canvas.toDataURL('image/png');
+    } catch {
+        return src;
+    }
 };
 
 export const numSvg = (num) => {
