@@ -1,5 +1,6 @@
 import { makeAutoObservable, toJS, action, runInAction } from 'mobx';
 import { maxBy } from 'lodash';
+import '@leafer-in/export';
 
 let timer;
 class Editor {
@@ -120,6 +121,7 @@ class Editor {
     setUseTool(value) {
         this.useTool = value;
         if (value) {
+            this.setMove(false);
             this.setSelect(false);
         } else {
             this.setSelect(true);
@@ -128,8 +130,16 @@ class Editor {
 
     setSelect(value) {
         if (!this.app) return;
-        this.app.editor.app.config.move.drag = false;
         this.app.editor.hittable = value;
+    }
+
+    setMove(value) {
+        if (!this.app) return;
+        this.app.config.move.drag = value;
+        if (this.app.interaction?.config?.move) {
+            this.app.interaction.config.move.drag = value;
+        }
+        this.setSelect(!value);
     }
     
 

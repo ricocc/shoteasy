@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { observer } from 'mobx-react-lite';
+import '@leafer-in/export';
 import Icon from '@components/Icon';
 import { Button, Tooltip, Popover, Segmented, ConfigProvider, Popconfirm } from 'antd';
 import stores from '@stores';

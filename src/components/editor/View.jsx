@@ -15,6 +15,7 @@ import { ScrollBar } from '@leafer-in/scroll'
 import { nanoid } from '@utils/utils';
 import HotKeys from './HotKeys';
 import '@leafer-in/view';
+import '@leafer-in/viewport';
 
 Cursor.set('pencil', { url: pencilPng });
 
@@ -38,6 +39,7 @@ export default observer(({target}) => {
                 },
             },
             tree: {
+                type: 'viewport',
                 usePartRender: true,
             },
             sky: {

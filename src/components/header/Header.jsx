@@ -46,7 +46,7 @@ export default observer(({headLeft, headRight}) => {
         const is = !isMove;
         stores.editor.setUseTool(null);
         setIsMove(is);
-        stores.editor.app.config.move.drag = is;
+        stores.editor.setMove(is);
     }
     const handleSetTheme = () => {
         stores.editor.setTheme()
