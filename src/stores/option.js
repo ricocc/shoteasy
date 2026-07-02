@@ -15,6 +15,7 @@ class Option {
     align = 'center';
     waterImg = null;
     waterIndex = 1;
+    hdrEnabled = false;
     size = {
         type: 'auto',
         title: 'Auto'
@@ -102,6 +103,9 @@ class Option {
     }
     setWaterIndex(value) {
         this.waterIndex = value;
+    }
+    setHdrEnabled(value) {
+        this.hdrEnabled = value;
     }
 }
 
