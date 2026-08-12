@@ -1,6 +1,7 @@
 {
   "name": "image-beautifier",
   "version": "1.0.4",
+  "packageManager": "pnpm@10.12.1",
   "type": "module",
   "description": "Used to beautify image share display, add beautiful background, rounded corners, shadows, etc...",
   "keywords": [
@@ -34,6 +35,7 @@
     "@leafer-in/interface": "2.1.10",
     "@leafer-in/resize": "2.1.10",
     "@leafer-in/scroll": "2.1.10",
+    "@leafer-in/text-editor": "2.1.10",
     "@leafer-in/view": "2.1.10",
     "@leafer-in/viewport": "2.1.10",
     "@leafer-ui/core": "2.1.10",
@@ -46,6 +48,7 @@
     "leafer-ui": "2.1.10",
     "lodash": "^4.17.21",
     "lucide-react": "^0.407.0",
+    "mage-icons-react": "0.7.0-beta",
     "mobx": "^6.13.0",
     "mobx-react-lite": "^4.0.7",
     "nanoid": "^5.0.7",
