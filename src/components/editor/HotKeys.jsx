@@ -14,6 +14,7 @@ export default observer(() => {
                     stores.editor.removeShape(item);
                 }
                 stores.editor.app.editor.cancel();
+                stores.history.commit();
             }
         };
         const handleZoom = type => {
@@ -27,6 +28,14 @@ export default observer(() => {
         const unsubscribe = tinykeys(window, {
             'Backspace': deleteItem,
             'Delete': deleteItem,
+            '$mod+KeyZ': event => {
+                event.preventDefault();
+                stores.history.undo();
+            },
+            '$mod+Shift+KeyZ': event => {
+                event.preventDefault();
+                stores.history.redo();
+            },
             '$mod+Minus': event => {
                 event.preventDefault();
                 handleZoom('out');

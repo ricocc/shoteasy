@@ -1,7 +1,7 @@
 import { useEffect } from 'react';
 import { observer } from 'mobx-react-lite';
 import { App, ResizeEvent, ZoomEvent, DragEvent, PointerEvent, Cursor } from 'leafer-ui';
-import { EditorMoveEvent } from '@leafer-in/editor';
+import { EditorMoveEvent, EditorScaleEvent, EditorRotateEvent } from '@leafer-in/editor';
 import debounce from 'lodash/debounce';
 import { addListener, removeListener } from 'resize-detector';
 import rotatePng from '@assets/rotate.png';
@@ -69,6 +69,58 @@ export default observer(({target}) => {
                 app.editor.config.lockRatio = false;
             }
         });
+
+        // 同步编辑器移动/缩放/旋转结果到 shape store。
+        // 监听三类变换事件，用 trailing debounce 仅在交互结束后回写最终几何，
+        // 避免拖拽过程中高频写回与 LeaferJS 节点产生反馈循环。
+        // 几何签名用于判断是否真正变化：选中点击等无位移事件不会产生空提交，
+        // 避免给历史栈留下冗余的 no-op 撤销步。
+        const geomSig = (s) => JSON.stringify([
+            +((s.x ?? 0).toFixed(2)),
+            +((s.y ?? 0).toFixed(2)),
+            +((s.width ?? 0).toFixed(2)),
+            +((s.height ?? 0).toFixed(2)),
+            +((s.rotation ?? 0).toFixed(2)),
+            +((s.scaleX ?? 1).toFixed(3)),
+            +((s.scaleY ?? 1).toFixed(3)),
+            s.points ? s.points.map((v) => +(v.toFixed(2))) : null,
+        ]);
+        const syncSelectionGeometry = debounce(() => {
+            const ed = app.editor;
+            if (!ed) return;
+            const { list } = ed;
+            if (!list || !list.length) return;
+            let changed = false;
+            for (const node of list) {
+                const shape = stores.editor.getShape(node.id);
+                if (!shape) continue;
+                const update = {
+                    ...shape,
+                    x: node.x,
+                    y: node.y,
+                    rotation: node.rotation ?? 0,
+                    scaleX: node.scaleX ?? 1,
+                    scaleY: node.scaleY ?? 1
+                };
+                if (['Slash', 'MoveDownLeft', 'Pencil'].includes(shape.type)) {
+                    // 线条类：同步 points（位移与尺寸都体现在 points / x / y 上）
+                    if (node.points) update.points = Array.from(node.points);
+                } else if (shape.type !== 'Step') {
+                    update.width = node.width;
+                    update.height = node.height;
+                }
+                if (geomSig(shape) !== geomSig(update)) {
+                    changed = true;
+                    stores.editor.updateShape(update);
+                }
+            }
+            // 仅在几何真正变化时入历史；变换类操作合并为一步
+            // （连续微调在同一拖拽手势内不产生多步）
+            if (changed) stores.history.commit('transform');
+        }, 200);
+        app.editor.on(EditorMoveEvent.MOVE, syncSelectionGeometry);
+        app.editor.on(EditorScaleEvent.SCALE, syncSelectionGeometry);
+        app.editor.on(EditorRotateEvent.ROTATE, syncSelectionGeometry);
         
         let shapeId = null;
         const onStart = (arg) => {
@@ -99,6 +151,7 @@ export default observer(({target}) => {
             stores.editor.addShape(newShape);
             shapeId = null;
             stores.editor.setUseTool(null);
+            stores.history.commit();
         });
         app.tree.on(DragEvent.START, (arg) => {
             const type = stores.editor.useTool;
@@ -144,6 +197,7 @@ export default observer(({target}) => {
                     stores.editor.removeShape(shape);
                 } else {
                     stores.editor.addShape(Object.assign({}, shape, {editable: true}));
+                    stores.history.commit();
                 }
             }
             shapeId = null;
@@ -179,6 +233,12 @@ export default observer(({target}) => {
             clearTimeout(timer);
         })
     }, [stores.option.frameConf.width, stores.option.frameConf.height]);
+
+    // 进入编辑器或换图时，以当前项目状态重建历史基线（不可撤销到换图/进入前）。
+    // defaultImg 变化也会导致 img.src 变化，由此一并覆盖。
+    useEffect(() => {
+        stores.history.reset();
+    }, [stores.editor.img?.src]);
 
     if (!stores.editor.app?.tree) return null;
     return (<>

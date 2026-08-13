@@ -4,21 +4,20 @@ import Icon from '@components/Icon';
 
 export default (props) => {
     const useDropper = () => {
-        if (!window.EyeDropper) return;
-        const eyeDropper = new EyeDropper();
+        const EyeDropperCtor = window.EyeDropper;
+        if (!EyeDropperCtor) return;
+        const eyeDropper = new EyeDropperCtor();
         eyeDropper.open().then((result) => {
             const color = result.sRGBHex;
             props?.onChange && props.onChange(new TinyColor(color));
-        }).catch((e) => {
-            console.log(e);
-        });
+        }).catch(() => undefined);
     }
     return <ColorPicker
         {...props}
         panelRender={(panel) => (
             <>
                 {window.EyeDropper && <div className="mb-1">
-                    <Button type="text" shape="circle" size="small" icon={<Icon.Pipette size={16} />} onClick={useDropper} />
+                    <Button type="text" shape="circle" size="small" aria-label="吸取屏幕颜色" icon={<Icon.Pipette size={16} />} onClick={useDropper} />
                 </div>}
                 {panel}
             </>

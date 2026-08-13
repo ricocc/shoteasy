@@ -1,4 +1,4 @@
-export default {
+const legacyBackgroundConfig = {
     default_1: {
         class: 'bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500',
         fill: {
@@ -385,3 +385,76 @@ export default {
         }
     },
 };
+
+const getBackgroundType = (key) => {
+    if (key === 'none') return 'none';
+    if (key.startsWith('solid_') || key === 'custom_solid') return 'solid';
+    if (key.startsWith('default_') || key.startsWith('gradient_')) return 'gradient';
+    if (key.startsWith('cosmic_img_') || key.startsWith('desktop_img_')) return 'builtin-image';
+    return 'solid';
+};
+
+const getBackgroundCategory = (key) => {
+    if (key === 'none') return 'none';
+    if (key.startsWith('default_')) return 'default';
+    if (key.startsWith('solid_') || key === 'custom_solid') return 'solid';
+    if (key.startsWith('gradient_')) return 'gradient';
+    if (key.startsWith('cosmic_img_')) return 'cosmic';
+    if (key.startsWith('desktop_img_')) return 'desktop';
+    return 'custom';
+};
+
+const normalizedBackgroundConfig = {
+    none: {
+        key: 'none',
+        type: 'none',
+        category: 'none',
+        label: '无背景',
+        class: 'bg-transparent border border-dashed border-slate-300',
+        fill: null,
+    },
+    custom_solid: {
+        key: 'custom_solid',
+        type: 'solid',
+        category: 'custom',
+        label: '自定义颜色',
+        class: 'bg-transparent border border-dashed border-slate-300',
+        fill: null,
+        hidden: true,
+    },
+    upload_image: {
+        key: 'upload_image',
+        type: 'upload-image',
+        category: 'upload',
+        label: '本地图片',
+        class: 'bg-transparent border border-dashed border-slate-300',
+        fill: null,
+        hidden: true,
+    },
+    ...Object.fromEntries(
+        Object.entries(legacyBackgroundConfig).map(([key, value]) => [
+            key,
+            {
+                ...value,
+                key,
+                type: getBackgroundType(key),
+                category: getBackgroundCategory(key),
+                label: key,
+            },
+        ])
+    ),
+};
+
+export const normalizeBackgroundKey = (value) => {
+    if (value && typeof value === 'object') {
+        return normalizeBackgroundKey(value.presetKey || value.key || value.id);
+    }
+    return normalizedBackgroundConfig[value] ? value : 'default_1';
+};
+
+export const getBackgroundDefinition = (value) => normalizedBackgroundConfig[normalizeBackgroundKey(value)];
+
+export const getBackgroundEntries = (category) => Object.values(normalizedBackgroundConfig)
+    .filter((item) => !item.hidden && (!category || item.category === category));
+
+export default normalizedBackgroundConfig;

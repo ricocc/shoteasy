@@ -29,28 +29,28 @@ export default observer(() => {
 
     return (
         <>
-            <div className="[&_label]:font-semibold [&_label]:text-sm flex gap-4 items-center justify-between">
-                <label>Watermark</label>
+            <div className="shoteasy-watermark-row [&_label]:font-semibold [&_label]:text-sm flex gap-4 items-center justify-between">
+                <label>水印</label>
                 <Switch defaultChecked={useWater} onChange={setUseWater} size="small" className="bg-slate-200" />
             </div>
             {useWater &&
-                <div className="[&_label]:font-semibold [&_label]:text-xs grid gap-3 pl-2 pt-2">
-                    <Input defaultValue={waterCont} placeholder="Watermark content" onChange={(e) => setWaterCont(e.target.value)} />
+                <div className="shoteasy-watermark-options [&_label]:font-semibold [&_label]:text-xs grid gap-3 pl-2 pt-2">
+                    <Input defaultValue={waterCont} placeholder="水印内容" onChange={(e) => setWaterCont(e.target.value)} />
                     <div className="flex items-center justify-between">
-                        <label>Color</label>
+                        <label>颜色</label>
                         <ColorPicker value={waterColor} onChange={handleColorChange} size="small" />
                     </div>
                     <div className="flex items-center justify-between">
-                        <label>Direction</label>
+                        <label>方向</label>
                         <div>
-                            <Radio.Group defaultValue={direction} onChange={(e) => setDirection(e.target.value)} size="small">
-                                <Radio.Button value={-45}><Icon.ArrowUpRight size={16} className="mt-[3px]" /></Radio.Button>
-                                <Radio.Button value={45}><Icon.ArrowDownRight size={16} className="mt-[3px]" /></Radio.Button>
+                            <Radio.Group defaultValue={direction} onChange={(e) => setDirection(e.target.value)} size="small" aria-label="水印方向">
+                                <Radio.Button value={-45} aria-label="左上到右下"><Icon.ArrowUpRight size={16} className="mt-[3px]" /></Radio.Button>
+                                <Radio.Button value={45} aria-label="右上到左下"><Icon.ArrowDownRight size={16} className="mt-[3px]" /></Radio.Button>
                             </Radio.Group>
                         </div>
                     </div>
                     <div className="flex items-center justify-between">
-                        <label>Only Background</label>
+                        <label>仅背景</label>
                         <Switch size="small" onChange={(checked) => stores.option.setWaterIndex(checked ? -1 : 1)} className="bg-slate-200" />
                     </div>
                 </div>

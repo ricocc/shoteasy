@@ -28,6 +28,7 @@ export default ({disabled = false, toSelect, locale='en', theme='auto'}) => {
                 type="text"
                 shape="circle"
                 disabled={disabled}
+                aria-label="选择表情"
                 icon={<Icon.Smile size={16} />}
             ></Button>
         </Popover>

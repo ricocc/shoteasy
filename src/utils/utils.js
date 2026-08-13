@@ -149,6 +149,13 @@ export const getPosition = (type, xw, xh) => {
     return { x: xw / 2, y: xh / 2 };
 };
 
+// 旋转后的截图使用外框包围盒对齐，返回旋转中心坐标。
+export const getRotatedPosition = (type, width, height, frameWidth, frameHeight) => {
+    const horizontal = type.includes('left') ? width / 2 : type.includes('right') ? frameWidth - width / 2 : frameWidth / 2;
+    const vertical = type.includes('top') ? height / 2 : type.includes('bottom') ? frameHeight - height / 2 : frameHeight / 2;
+    return { x: horizontal, y: vertical };
+};
+
 export const calculateRotatedRectDimensions = (width, height, angleDegrees) => {
     const angleRadians = angleDegrees * (Math.PI / 180);
     const newWidth =
@@ -171,7 +178,7 @@ export function toBase64(blob) {
         reader.onerror = reject;
         reader.readAsDataURL(blob);
     });
-};
+}
 
 export const svgToDataURL = (svgStr) => {
     const encoded = encodeURIComponent(svgStr).replace(/'/g, '%27').replace(/"/g, '%22');

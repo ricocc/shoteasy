@@ -61,6 +61,29 @@ export default class UndoRedoManager {
         return this.current;
     }
 
+    /**
+     * 用新数据替换栈顶（当前指针位置），不前进指针。
+     * 用于合并策略：连续同类操作在窗口内只保留最终结果。
+     */
+    replaceTop(data) {
+        if (!this._stacks || this._stacks.length === 0) {
+            return this.add(data);
+        }
+        this._stacks[this._pointer] = data;
+        this.options.onChange(this);
+        return this.current;
+    }
+
+    /**
+     * 清空全部历史并把指针复位。换图、清空项目时用于重建基线。
+     */
+    clear() {
+        if (!this._stacks) return;
+        this._stacks = [];
+        this._pointer = -1;
+        this.options.onChange(this);
+    }
+
     undo() {
         if (!this.canUndo) {
             console.warn('not can undo');

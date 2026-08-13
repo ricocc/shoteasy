@@ -37,19 +37,22 @@ export default observer(() => {
     };
     return (
         <>
-            <Tooltip title='Crop Image'>
+            <Tooltip title='裁剪图片'>
                 <Button
-                    type='text'
-                    shape='circle'
+                type='text'
+                shape='circle'
+                    aria-label='裁剪图片'
                     icon={<Icon.Crop size={18} />}
                     onClick={handleCrop}
                 ></Button>
             </Tooltip>
             <Modal
-                title='Cropper'
+                title='裁剪'
                 open={isModalOpen}
                 onOk={handleOk}
                 onCancel={handleCancel}
+                okText="确定"
+                cancelText="取消"
                 destroyOnClose={true}
             >
                 <Cropper

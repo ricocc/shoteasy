@@ -9,38 +9,41 @@ const cols = ['top-left', 'top', 'top-right', 'left', 'center', 'right', 'bottom
 
 export default observer(() => {
     const [open, setOpen] = useState(false);
-    const hide = () => {
-        setOpen(false);
-    };
-    const handleOpenChange = (newOpen) => {
-        setOpen(newOpen);
-    };
     const handleSelect = (value) => {
         stores.option.setAlign(value);
-    }
+        setOpen(false);
+    };
     const content = (
-        <div className={cn("flex flex-wrap w-24 position-block", stores.option.align)}>
+        <div className={cn('shoteasy-position-grid position-block', stores.option.align)} role="group" aria-label="图片位置">
             {cols.map(item => (
-                <div key={item} className="w-8 h-8 border border-[var(--c-br)] rounded-sm hover:bg-[var(--c-wb)] cursor-pointer" onClick={() => handleSelect(item)}></div>
+                <button
+                    key={item}
+                    type="button"
+                    className="w-8 h-8 border border-[var(--c-br)] rounded-sm hover:bg-[var(--c-wb)] cursor-pointer"
+                    aria-label={item}
+                    aria-pressed={stores.option.align === item}
+                    onClick={() => handleSelect(item)}
+                />
             ))}
         </div>
-    )
+    );
     return (
         <Popover
             content={content}
-            trigger='click'
+            trigger="click"
             arrow={false}
             placement="bottomRight"
-            overlayClassName={cn("shoteasy-components", stores.editor.isDark && 'dark-mode')}
+            overlayClassName={cn('shoteasy-components', stores.editor.isDark && 'dark-mode')}
             open={open}
-            onOpenChange={handleOpenChange}
+            onOpenChange={setOpen}
         >
             <Button
-                type='text'
-                shape='circle'
-                className={cn(open && "shadow-md")}
+                type="text"
+                shape="circle"
+                className={cn('shoteasy-inspector-icon-button', open && 'is-active')}
+                aria-label="图片位置"
                 icon={<Icon.LayoutGrid size={18} />}
-            ></Button>
+            />
         </Popover>
-    )
-})
+    );
+});

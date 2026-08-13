@@ -15,59 +15,61 @@ export default observer(() => {
     const beforeUpload = async (file) => {
         await getFile(file);
         return Promise.reject();
-    }
+    };
     const onCapture = async () => {
         const dataURL = await captureScreen();
         if (!dataURL) return;
         getFile(dataURL, 'dataURL');
-    }
-    const comingSoon = () => {
-        stores.editor.message.info('Developing, Coming soon!');
-    }
+    };
     const handleTry = () => {
         getFile(demoPng, 'dataURL');
-    }
+    };
     usePaste((file) => {
         getFile(file);
     });
+
     return (
-        <div className='md:w-0 md:flex-1 flex flex-col justify-center items-center overflow-hidden select-none relative'>
-            <div className={cn('max-w-[600px]', stores.editor.invalid && 'invalid')}>
+        <div className="shoteasy-empty-state">
+            <div className={cn('shoteasy-empty-state__content', stores.editor.invalid && 'invalid')}>
+                <div className="shoteasy-empty-state__heading">
+                    <div className="shoteasy-empty-state__mark">
+                        <Icon.ImagePlus size={24} />
+                    </div>
+                    <div>
+                        <h1>把截图变成成品</h1>
+                        <p>上传一张图片，开始调整尺寸、背景和外框</p>
+                    </div>
+                </div>
                 <Dragger
                     accept={supportImg.join(',')}
                     name="file"
                     showUploadList={false}
                     beforeUpload={beforeUpload}
-                    rootClassName="p-4 rounded-md bg-white dark:bg-black dark:text-gray-400 block shadow-sm"
+                    rootClassName="shoteasy-upload-card"
                 >
-                    <div className="text-center p-10">
-                        <p className="text-2xl my-2 opacity-60"><Icon.ImagePlus className="mx-auto" size={36} /></p>
-                        <p className="text-sm px-4">Click or Drag image to this area<br/>or Paste image</p>
+                    <div className="shoteasy-upload-card__body">
+                        <Icon.ImagePlus size={32} />
+                        <div>
+                            <strong>点击或拖拽图片到这里</strong>
+                            <span>也可以直接粘贴剪贴板图片</span>
+                        </div>
                     </div>
                 </Dragger>
-                <div className="flex justify-between mt-2 py-4 px-6 rounded-md bg-white dark:bg-black shadow-sm">
-                    <Tooltip placement='top' arrow={false} title='Take a screenshot of desktop windows'>
-                        <Button shape="round" type="default" size="large" icon={<Icon.Camera size={20} />} onClick={onCapture} />
-                    </Tooltip>
-                    <Tooltip placement='top' arrow={false} title='Beautify text'>
-                        <Button shape="round" type="default" size="large" icon={<Icon.Type size={20} />} onClick={comingSoon} />
-                    </Tooltip>
-                    <Tooltip placement='top' arrow={false} title='Beautify Code'>
-                        <Button shape="round" type="default" size="large" icon={<Icon.CodeXml size={20} onClick={comingSoon} />} />
-                    </Tooltip>
-                    <Tooltip placement='top' arrow={false} title='Create gif animate'>
-                        <Button shape="round" type="default" size="large" icon={<Icon.ImagePlay size={20} onClick={comingSoon} />} />
+
+                <div className="shoteasy-quick-actions" aria-label="快捷操作">
+                    <Tooltip placement="top" arrow={false} title="截取屏幕窗口">
+                        <Button type="default" size="middle" icon={<Icon.Camera size={18} />} onClick={onCapture}>
+                            截取屏幕
+                        </Button>
                     </Tooltip>
                 </div>
-                <button className="w-full mt-1 rounded-md bg-white dark:bg-black border border-dotted dark:border-gray-700 shadow-sm flex justify-between items-center p-1 hover:bg-slate-50 dark:hover:bg-gray-900 hover:px-1.5" onClick={handleTry}>
-                    <div className="overflow-hidden rounded-sm w-8">
-                        <img src={demoPng} className="w-full" />
-                    </div>
-                    <div className="text-xs text-gray-500">
-                        Give it a try ✨
-                    </div>
+
+                <button className="shoteasy-demo-card" onClick={handleTry} type="button">
+                    <img src={demoPng} alt="示例截图" />
+                    <span>试用示例</span>
+                    <Icon.ArrowUpRight size={16} />
                 </button>
             </div>
         </div>
-    )
+    );
 });

@@ -1,33 +1,20 @@
-import { useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import Icon from '@components/Icon';
-import { Button, Dropdown } from 'antd';
+import { Button, Dropdown, Tooltip } from 'antd';
 import stores from '@stores';
 
 const items = [
-    {
-        key: 0.5,
-        label: '50%'
-    },
-    {
-        key: 1,
-        label: '100%'
-    },
-    {
-        key: 1.5,
-        label: '150%'
-    },
-    {
-        key: 2,
-        label: '200%'
-    }
+    { key: 0.5, label: '50%' },
+    { key: 1, label: '100%' },
+    { key: 1.5, label: '150%' },
+    { key: 2, label: '200%' },
 ];
 
 export default observer(() => {
     const handleZoom = (key) => {
         stores.editor.app?.tree.zoom(key);
         stores.editor.setScale(stores.editor.app.tree.scale);
-    }
+    };
     const handleMenuClick = (item) => {
         const num = Number(item.key);
         if (num === 4) {
@@ -36,19 +23,32 @@ export default observer(() => {
             stores.editor.app?.tree.zoom(num);
         }
         stores.editor.setScale(stores.editor.app.tree.scale);
-    }
+    };
+
     return (
-        <div className="absolute z-10 bottom-4 gap-2 right-4 flex items-center ">
-            <div className="flex bg-white dark:bg-black overflow-hidden rounded-full shadow-md">
-                <Button type="text" icon={<Icon.ZoomIn size={16} />} onClick={() => handleZoom('in')} />
+        <div className="shoteasy-zoom-controls">
+            <div className="shoteasy-zoom-controls__group">
+                <Tooltip placement="top" arrow={false} title="放大">
+                    <Button type="text" aria-label="放大" icon={<Icon.ZoomIn size={16} />} onClick={() => handleZoom('in')} />
+                </Tooltip>
                 <Dropdown menu={{ items, onClick: handleMenuClick }} placement="top">
-                    <Button type="text">{stores.editor.scale}%</Button>
+                    <Button type="text" className="shoteasy-zoom-value" aria-label="选择缩放比例">
+                        {stores.editor.scale}%
+                    </Button>
                 </Dropdown>
-                <Button type="text" icon={<Icon.ZoomOut size={16} />} onClick={() => handleZoom('out')} />
+                <Tooltip placement="top" arrow={false} title="缩小">
+                    <Button type="text" aria-label="缩小" icon={<Icon.ZoomOut size={16} />} onClick={() => handleZoom('out')} />
+                </Tooltip>
             </div>
-            <div className="rounded-full bg-white dark:bg-black shadow-md overflow-hidden">
-                <Button type="text" icon={<Icon.Maximize size={16} />} onClick={() => handleMenuClick({key: 4})} />
-            </div>
+            <Tooltip placement="top" arrow={false} title="适应画布">
+                <Button
+                    type="text"
+                    className="shoteasy-zoom-controls__fit"
+                    aria-label="适应画布"
+                    icon={<Icon.Maximize size={16} />}
+                    onClick={() => handleMenuClick({ key: 4 })}
+                />
+            </Tooltip>
         </div>
-    )
+    );
 });

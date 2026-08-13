@@ -5,7 +5,7 @@ import debounce from 'lodash/debounce';
 import { numSvg } from '@utils/utils';
 import Magnifier from '@utils/shape/Magnifier';
 
-export default ({ parent, type, id, width, height, x, y, fill, strokeWidth, zIndex, points, editable, text, snap }) => {
+export default ({ parent, type, id, width, height, x, y, fill, strokeWidth, zIndex, points, editable, text, snap, rotation = 0, scaleX = 1, scaleY = 1 }) => {
     const shape = useMemo(() => {
         const defaultOption = { id, x, y, zIndex }
         if (type === 'SquareFill') {
@@ -125,15 +125,23 @@ export default ({ parent, type, id, width, height, x, y, fill, strokeWidth, zInd
     useEffect(() => {
         if (['Slash', 'MoveDownLeft', 'Pencil'].includes(type)) {
             shape.points = points;
+            // 线条类同样应用位移，使编辑器移动结果可被序列化还原
+            shape.x = x;
+            shape.y = y;
         } else if (type === 'Step') {
-            //
+            shape.x = x;
+            shape.y = y;
         } else {
             shape.x = x;
             shape.y = y;
             shape.width = width;
             shape.height = height;
         }
-    }, [x, y, width, height]);
+        // 变换回写：编辑器移动/缩放/旋转后的几何与变换统一应用，保证可还原
+        shape.rotation = rotation;
+        shape.scaleX = scaleX;
+        shape.scaleY = scaleY;
+    }, [x, y, width, height, rotation, scaleX, scaleY, points]);
 
     useEffect(() => {
         if (type === 'SquareFill') shape.fill = fill;

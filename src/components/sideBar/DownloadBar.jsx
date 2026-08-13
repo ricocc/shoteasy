@@ -12,175 +12,156 @@ export default observer(() => {
     const [open, setOpen] = useState(false);
     const [format, setFormat] = useState('png');
     const [ratio, setRatio] = useState(1);
-    const handleOpenChange = (newOpen) => {
-        setOpen(newOpen);
-    };
+    const hasImage = Boolean(stores.editor.img?.src);
+
     const toDownload = async () => {
-        if (!stores.editor.isEditing) return;
-        if (loading) return;
-        const option = {
-            pixelRatio: ratio,
-            blob: true
-        };
+        if (!stores.editor.isEditing || loading) return;
+        const option = { pixelRatio: ratio, blob: true };
         if (['jpg', 'webp'].includes(format)) {
             option.quality = 0.9;
             option.fill = '#ffffff';
         }
         const key = nanoid();
         setLoading(true);
-        stores.editor.message.open({
-            key,
-            type: 'loading',
-            content: 'Downloading...',
-        });
+        stores.editor.message.open({ key, type: 'loading', content: '正在下载…' });
         try {
             const result = await stores.editor.app.tree.export(format, option);
-            let name = `ShotEasy`;
-            if (ratio > 1) name += `@${ ratio }`;
-            await toDownloadFile(result.data, `${ name }.${ format }`);
-            stores.editor.message.open({
-                key,
-                type: 'success',
-                content: 'Download Success!',
-            });
+            let name = 'ShotEasy';
+            if (ratio > 1) name += `@${ratio}`;
+            await toDownloadFile(result.data, `${name}.${format}`);
+            stores.editor.message.open({ key, type: 'success', content: '下载成功' });
         } catch {
-            stores.editor.message.open({
-                key,
-                type: 'error',
-                content: 'Download failed!',
-            });
+            stores.editor.message.open({ key, type: 'error', content: '下载失败' });
         } finally {
             setLoading(false);
         }
     };
+
     const toCopy = async () => {
-        if (!stores.editor.isEditing) return;
-        if (loading) return;
+        if (!stores.editor.isEditing || loading) return;
         const key = nanoid();
         setLoading(true);
-        stores.editor.message.open({
-            key,
-            type: 'loading',
-            content: 'Copying...',
-        });
+        stores.editor.message.open({ key, type: 'loading', content: '正在复制…' });
         await stores.editor.app.tree.export('png', { blob: true, pixelRatio: ratio }).then(async result => {
-            const { data } = result;
             await navigator.clipboard.write([
-                new ClipboardItem({
-                    [data.type]: data,
-                }),
+                new ClipboardItem({ [result.data.type]: result.data }),
             ]);
-            stores.editor.message.open({
-                key,
-                type: 'success',
-                content: 'Copy Success!',
-            });
+            stores.editor.message.open({ key, type: 'success', content: '复制成功' });
         }).catch(() => {
-            stores.editor.message.open({
-                key,
-                type: 'error',
-                content: 'Copy failed!',
-            });
+            stores.editor.message.open({ key, type: 'error', content: '复制失败' });
         });
         setLoading(false);
-    }
+    };
+
     const confirm = () => {
         stores.editor.destroy();
         stores.editor.clearImg();
         stores.editor.clearFun && stores.editor.clearFun();
-    }
+    };
+
     useKeyboardShortcuts(() => toDownload(), () => toCopy(), [toDownload, toCopy]);
-    const content = (<div>
-        <div className="p-2 [&_.ant-segmented]:w-full [&_.ant-segmented-item]:w-[33%]">
-            <div className="text-xs text-gray-400 mb-2">Format</div>
-            <Segmented
-                options={['png', 'jpg' , 'webp']}
-                size="middle"
-                onChange={setFormat}
-            />
-            <div className="text-xs text-gray-400 mt-2 mb-2">Pixel Ratio</div>
-            <Segmented
-                options={[{value: 1, icon: '1x'},{value: 2, icon: '2x'},{value: 3, icon: '3x'}]}
-                size="middle"
-                onChange={setRatio}
-            />
-            {stores.option.frameConf.width &&
-                <div className="text-xs p-3 mt-4 flex justify-between bg-black/5 rounded-md">
-                    <span className="text-gray-400">Download Size</span>
-                    <span className="text-gray-700">{stores.option.frameConf.width * ratio} x {stores.option.frameConf.height * ratio}</span>
-                </div>
-            }
+
+    const content = (
+        <div className="shoteasy-export-popover">
+            <div className="p-3 [&_.ant-segmented]:w-full [&_.ant-segmented-item]:w-[33%]">
+                <div className="text-xs font-medium text-[var(--se-muted)] mb-2">格式</div>
+                <Segmented
+                    options={['png', 'jpg', 'webp']}
+                    size="middle"
+                    value={format}
+                    onChange={setFormat}
+                />
+                <div className="text-xs font-medium text-[var(--se-muted)] mt-4 mb-2">像素倍率</div>
+                <Segmented
+                    options={[{ value: 1, label: '1x' }, { value: 2, label: '2x' }, { value: 3, label: '3x' }]}
+                    size="middle"
+                    value={ratio}
+                    onChange={setRatio}
+                />
+                {stores.option.frameConf.width && (
+                    <div className="text-xs p-3 mt-4 flex justify-between bg-[var(--se-panel-muted)] rounded-lg">
+                        <span className="text-[var(--se-muted)]">导出尺寸</span>
+                        <span className="font-medium text-[var(--se-ink)]">
+                            {stores.option.frameConf.width * ratio} × {stores.option.frameConf.height * ratio}
+                        </span>
+                    </div>
+                )}
+            </div>
         </div>
-    </div>)
+    );
+
     return (
-        <div className='shrink-0 py-4 px-6 flex gap-2 justify-center items-center'>
+        <div className="shoteasy-top-actions">
             <ConfigProvider
                 theme={{
                     components: {
                         Button: {
-                            colorPrimary: stores.editor.isDark ? '#2b4acb':'#000',
-                            algorithm: true, // 启用算法
+                            colorPrimary: stores.editor.isDark ? '#6272f5' : '#2563eb',
+                            algorithm: true,
                         },
                     },
                 }}
             >
-                <div className='ant-space-compact flex flex-1'>
-                    <Tooltip placement='top' title={<span>Download {modKey} + S</span>}>
-                        <Button
-                            type='primary'
-                            size='large'
-                            loading={loading}
-                            icon={<Icon.ImageDown size={18} />}
-                            className='rounded-se-none flex-1 rounded-ee-none me-[-1px] hover:z-[1] border-r-white/30'
-                            onClick={toDownload}
-                        >
-                            <div className='leading-4 px-2'>
-                                <div className='text-sm leading-4 font-semibold'>
-                                    Download
-                                </div>
-                                <div className='text-xs'>{ratio}x as {format.toLocaleUpperCase()}</div>
-                            </div>
-                        </Button>
-                    </Tooltip>
-                    <Tooltip placement='top' title={<span>Copy {modKey} + C</span>}>
-                        <Button
-                            type='primary'
-                            size='large'
-                            icon={<Icon.Copy size={18} />}
-                            loading={loading}
-                            className='rounded-ss-none rounded-es-none border-l-white/30'
-                            onClick={toCopy}
-                        />
-                    </Tooltip>
-                </div>
-            </ConfigProvider>
-            <div className="flex items-center gap-1">
+                <Tooltip placement="bottom" arrow={false} title={`下载 ${modKey} + S · ${ratio}x ${format.toUpperCase()}`}>
+                    <Button
+                        type="primary"
+                        size="middle"
+                        className="shoteasy-top-action shoteasy-top-action--primary"
+                        loading={loading}
+                        disabled={!hasImage}
+                        icon={<Icon.Download size={17} />}
+                        aria-label="下载图片"
+                        onClick={toDownload}
+                    />
+                </Tooltip>
+                <Tooltip placement="bottom" arrow={false} title={`复制 ${modKey} + C`}>
+                    <Button
+                        type="default"
+                        size="middle"
+                        className="shoteasy-top-action"
+                        icon={<Icon.Copy size={17} />}
+                        loading={loading}
+                        disabled={!hasImage}
+                        aria-label="复制图片"
+                        onClick={toCopy}
+                    />
+                </Tooltip>
                 <Popover
                     content={content}
-                    trigger='click'
+                    trigger="click"
                     arrow={false}
-                    placement="topRight"
+                    placement="bottomRight"
                     open={open}
-                    overlayStyle={{
-                        width: '320px',
-                    }}
-                    onOpenChange={handleOpenChange}
+                    overlayStyle={{ width: '320px' }}
+                    onOpenChange={setOpen}
                 >
-                    <Button size='large' icon={<Icon.Settings2 size={18} />} />
+                    <Button
+                        size="middle"
+                        className="shoteasy-top-action"
+                        disabled={!hasImage}
+                        icon={<Icon.Settings2 size={17} />}
+                        aria-label="导出设置"
+                    />
                 </Popover>
-                {stores.editor.img?.src && 
+                {hasImage && (
                     <Popconfirm
-                        title="Delete the screenshot"
-                        description="Are you sure to delete this screenshot?"
-                        placement="topRight"
+                        title="删除截图"
+                        description="确定要删除当前截图吗？"
+                        placement="bottomRight"
                         onConfirm={confirm}
-                        okText="Yes"
-                        cancelText="No"
+                        okText="确定"
+                        cancelText="取消"
                     >
-                        <Button size='large' icon={<Icon.Trash2 size={18} />} />
+                        <Button
+                            size="middle"
+                            danger
+                            className="shoteasy-top-action"
+                            icon={<Icon.Trash2 size={17} />}
+                            aria-label="删除截图"
+                        />
                     </Popconfirm>
-                }
-            </div>
+                )}
+            </ConfigProvider>
         </div>
     );
 });
