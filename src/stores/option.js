@@ -10,6 +10,10 @@ const BACKGROUND_MODES = ['cover', 'fit', 'stretch'];
 const BACKGROUND_ALIGNS = ['top-left', 'top', 'top-right', 'left', 'center', 'right', 'bottom-left', 'bottom', 'bottom-right'];
 const isImageBackground = (definition) => definition?.type === 'builtin-image' || definition?.type === 'upload-image';
 
+// 远程背景下载的取消控制器（模块级、非 observable，避免被 MobX 追踪）。
+// 每次 _fetchImageBackground 创建新控制器并 abort 上一个，防止旧请求覆盖新选择（M4.14）。
+let imageBackgroundAbort = null;
+
 class Option {
     scale = 1;
     scaleX = false;
@@ -25,6 +29,12 @@ class Option {
     backgroundAssetId = null;
     backgroundMode = 'cover';
     backgroundAlign = 'center';
+    backgroundLoading = false;
+    // 背景轻量效果（M4.11/M4.12/M4.13），默认关闭
+    backgroundBlur = 0;
+    backgroundMaskColor = '#000000';
+    backgroundMaskOpacity = 0;
+    backgroundNoise = 0;
     align = 'center';
     waterImg = null;
     waterIndex = 1;
@@ -142,20 +152,107 @@ class Option {
         history.commit();
         return true;
     }
+    /**
+     * 统一背景选择入口（M4.10）。
+     * 非图片背景走同步 setBackground；内置图片背景先下载为 Blob 再应用——
+     * 只有获取成功后才提交 store，失败时保留上一个有效背景（M4.14）。
+     * 返回 true=成功，false=被更新的选择取消，抛错=下载失败（调用方提示）。
+     */
+    async applyBackground(value) {
+        const key = normalizeBackgroundKey(value);
+        const definition = getBackgroundDefinition(key);
+        if (!definition) return false;
+        if (definition.type === 'builtin-image') {
+            return this._fetchImageBackground(key);
+        }
+        return this.setBackground(key);
+    }
+    async _fetchImageBackground(key, { commit = true } = {}) {
+        const definition = getBackgroundDefinition(key);
+        const remoteUrl = definition?.fill?.url;
+        if (!remoteUrl) return this.setBackground(key);
+        // 取消上一个未完成的远程下载
+        if (imageBackgroundAbort) imageBackgroundAbort.abort();
+        const controller = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+        imageBackgroundAbort = controller;
+        runInAction(() => { this.backgroundLoading = true; });
+        try {
+            const asset = await assetStore.addFromUrl(remoteUrl, controller?.signal);
+            // 下载期间用户又选了别的背景：放弃本次结果
+            if (controller?.signal?.aborted || imageBackgroundAbort !== controller) return false;
+            runInAction(() => {
+                this.releaseBackgroundAsset();
+                this.background = key;
+                this.backgroundAssetId = asset.id;
+                this.frameConf.background = {
+                    type: 'image',
+                    url: asset.url,
+                    mode: this.backgroundMode,
+                    align: this.backgroundAlign,
+                };
+                this.backgroundLoading = false;
+            });
+            if (commit) history.commit();
+            return true;
+        } catch (err) {
+            // 被取消：静默返回（更新的选择会自行处理）
+            if (controller?.signal?.aborted || imageBackgroundAbort !== controller) return false;
+            runInAction(() => { this.backgroundLoading = false; });
+            throw err;
+        }
+    }
     setBackgroundMode(value) {
         if (!BACKGROUND_MODES.includes(value)) return false;
         this.backgroundMode = value;
-        const definition = getBackgroundDefinition(this.background);
-        if (isImageBackground(definition)) this.frameConf.background = this.getBackgroundFill(definition);
+        this._syncImageBackgroundFill();
         history.commit('background:mode');
         return true;
     }
     setBackgroundAlign(value) {
         if (!BACKGROUND_ALIGNS.includes(value)) return false;
         this.backgroundAlign = value;
-        const definition = getBackgroundDefinition(this.background);
-        if (isImageBackground(definition)) this.frameConf.background = this.getBackgroundFill(definition);
+        this._syncImageBackgroundFill();
         history.commit('background:align');
+        return true;
+    }
+    /**
+     * 图片背景的 mode/align 变更后重建 frameConf.background。
+     * 必须保留当前运行时 URL：上传背景的 blob: 不在静态定义里（definition.fill 为 null），
+     * 内置图片背景运行时也已把远程 URL 替换为同源 blob:（M4.10，避免导出跨域）。
+     * 若用静态定义（getBackgroundFill）重建会丢掉 blob:，导致背景消失或导出 canvas 被 tainted。
+     */
+    _syncImageBackgroundFill() {
+        const definition = getBackgroundDefinition(this.background);
+        if (!isImageBackground(definition)) return;
+        const currentUrl = this.frameConf.background?.url;
+        this.frameConf.background = {
+            type: 'image',
+            url: currentUrl || definition?.fill?.url || null,
+            mode: this.backgroundMode,
+            align: this.backgroundAlign,
+        };
+    }
+    setBackgroundBlur(value) {
+        const blur = Math.max(0, Math.min(30, Number(value) || 0));
+        this.backgroundBlur = blur;
+        history.commit('slider:bgblur');
+        return true;
+    }
+    setBackgroundMaskColor(value) {
+        this.backgroundMaskColor = typeof value === 'string' && value ? value : this.backgroundMaskColor;
+        history.commit('bgmask');
+        return true;
+    }
+    setBackgroundMaskOpacity(value) {
+        const opacity = Math.max(0, Math.min(1, Number(value) || 0));
+        this.backgroundMaskOpacity = opacity;
+        history.commit('slider:bgmask');
+        return true;
+    }
+    setBackgroundNoise(value) {
+        const noise = Math.max(0, Math.min(1, Number(value) || 0));
+        this.backgroundNoise = noise;
+        history.commit('slider:bgnoise');
         return true;
     }
     setUploadedBackground(asset) {
@@ -217,8 +314,14 @@ class Option {
      */
     toDocument() {
         const frameConf = toJS(this.frameConf);
-        if (this.background === 'upload_image' && frameConf.background) {
-            frameConf.background = { ...frameConf.background, url: null };
+        if (frameConf.background) {
+            if (this.background === 'upload_image') {
+                frameConf.background = { ...frameConf.background, url: null };
+            } else if (getBackgroundDefinition(this.background)?.type === 'builtin-image') {
+                // 内置图片背景运行时持有一次性 blob: URL；序列化时回写稳定的远程 URL，避免保存失效地址
+                const remote = getBackgroundDefinition(this.background)?.fill?.url;
+                if (remote) frameConf.background = { ...frameConf.background, url: remote };
+            }
         }
         return toJS({
             scale: this.scale,
@@ -235,6 +338,10 @@ class Option {
             backgroundAssetId: this.backgroundAssetId,
             backgroundMode: this.backgroundMode,
             backgroundAlign: this.backgroundAlign,
+            backgroundBlur: this.backgroundBlur,
+            backgroundMaskColor: this.backgroundMaskColor,
+            backgroundMaskOpacity: this.backgroundMaskOpacity,
+            backgroundNoise: this.backgroundNoise,
             align: this.align,
             waterImg: this.waterImg,
             waterIndex: this.waterIndex,
@@ -269,6 +376,10 @@ class Option {
             this.backgroundAssetId = next.backgroundAssetId;
             this.backgroundMode = next.backgroundMode;
             this.backgroundAlign = next.backgroundAlign;
+            this.backgroundBlur = next.backgroundBlur;
+            this.backgroundMaskColor = next.backgroundMaskColor;
+            this.backgroundMaskOpacity = next.backgroundMaskOpacity;
+            this.backgroundNoise = next.backgroundNoise;
             this.align = next.align;
             this.waterImg = next.waterImg;
             this.waterIndex = next.waterIndex;
@@ -280,6 +391,13 @@ class Option {
                 this.frameConf.background = { ...this.frameConf.background, url: asset.url };
             }
         });
+        // 内置图片背景：恢复时使用的是远程 URL，异步重新下载为 Blob 以保证导出同源（M4.10）。
+        // 视觉与远程一致，故不提交历史。
+        // 草稿恢复会先把持久化 Blob 登记到 assetStore；已有同源运行时 URL 时
+        // 无需再次请求远程背景，避免恢复阶段产生竞态或覆盖已恢复资源。
+        if (getBackgroundDefinition(this.background)?.type === 'builtin-image' && !assetStore.get(this.backgroundAssetId)) {
+            this._fetchImageBackground(this.background, { commit: false }).catch(() => { });
+        }
     }
 
     releaseBackgroundAsset() {

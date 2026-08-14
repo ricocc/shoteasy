@@ -31,8 +31,11 @@ Vite 会以 ES module 形式输出 `lib/image-beautifier.es.js`，样式通常�
 | `isDark` | `boolean` | `undefined` | 真值时启用暗色；假值仍可能被本地主题记录覆盖 |
 | `boxClassName` | `string` | `''` | 合并到顶层容器的 className |
 | `onClear` | `() => void` | `undefined` | 用户确认删除当前截图后调用 |
+| `persistence` | `false` 或 `{ key: string, autoRestore?: boolean }` | `false` | 显式开启 IndexedDB 草稿；按 `key` 隔离，`autoRestore` 默认开启 |
 
 `defaultImg` 通过 `<img>` 加载；非 data URL 会设置 `crossOrigin="Anonymous"`。远程服务器必须允许跨域，否则载入或导出可能失败。
+
+`persistence` 默认关闭，组件不会访问 IndexedDB。开启后，项目变化会以 750ms 防抖保存；关联的原图和上传背景会保存为 Blob。组件卸载只释放运行时 object URL，不删除草稿。传入 `defaultImg` 时优先使用宿主图片，不自动覆盖为草稿。
 
 ## 宿主布局
 
@@ -45,6 +48,7 @@ Vite 会以 ES module 形式输出 `lib/image-beautifier.es.js`，样式通常�
   boxClassName="h-[720px]"
   headLeft={<strong>My Editor</strong>}
   onClear={() => setImageDataUrl(null)}
+  persistence={{ key: 'my-editor', autoRestore: true }}
 />
 ```
 

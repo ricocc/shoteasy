@@ -1,4 +1,4 @@
-import { Button, Drawer, Segmented } from 'antd';
+import { Button, Drawer, Segmented, Slider } from 'antd';
 import { observer } from 'mobx-react-lite';
 import Icon from '@components/Icon';
 import ColorPicker from '@components/ColorPicker';
@@ -31,7 +31,10 @@ export default observer(({ showMore, onChange }) => {
         event.target.value = '';
     };
     const onSelectChange = (key) => {
-        stores.option.setBackground(key);
+        // 内置图片背景先下载为 Blob 再应用（M4.10）；失败时保留原背景并提示（M4.14）
+        stores.option.applyBackground(key).catch(() => {
+            stores.editor.message.error('背景加载失败，请重试');
+        });
     }
     const backgroundDefinition = getBackgroundDefinition(stores.option.background);
     const isImageBackground = backgroundDefinition?.type === 'builtin-image' || backgroundDefinition?.type === 'upload-image';
@@ -97,6 +100,28 @@ export default observer(({ showMore, onChange }) => {
                             </div>
                         </div>
                     )}
+                    <h4 className="text-sm font-bold py-2">背景效果</h4>
+                    <div className="pb-3">
+                        <div className="flex items-center justify-between">
+                            <label>模糊</label>
+                            <span className="text-xs text-gray-500">{Math.round(stores.option.backgroundBlur)}px</span>
+                        </div>
+                        <Slider min={0} max={30} value={stores.option.backgroundBlur} onChange={(v) => stores.option.setBackgroundBlur(v)} />
+                    </div>
+                    <div className="pb-3">
+                        <div className="flex items-center justify-between">
+                            <label>遮罩</label>
+                            <ColorPicker value={stores.option.backgroundMaskColor} onChange={(e) => stores.option.setBackgroundMaskColor(e.toHexString())} size="small" />
+                        </div>
+                        <Slider min={0} max={1} step={0.05} value={stores.option.backgroundMaskOpacity} onChange={(v) => stores.option.setBackgroundMaskOpacity(v)} />
+                    </div>
+                    <div className="pb-3">
+                        <div className="flex items-center justify-between">
+                            <label>噪点</label>
+                            <span className="text-xs text-gray-500">{Math.round(stores.option.backgroundNoise * 100)}%</span>
+                        </div>
+                        <Slider min={0} max={1} step={0.05} value={stores.option.backgroundNoise} onChange={(v) => stores.option.setBackgroundNoise(v)} />
+                    </div>
                     <h4 className="text-sm font-bold py-2">无背景</h4>
                     <BackgroundSelect type="none" onChange={onSelectChange} value={stores.option.background} />
                     <h4 className="text-sm font-bold py-2">纯色</h4>

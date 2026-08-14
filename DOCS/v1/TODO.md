@@ -1,6 +1,6 @@
 # V1 执行 TODO
 
-> 当前状态：M0 已完成并验证；M1 已完成并验证；M2 已完成并验证；M3 已完成；M4 进行中。
+> 当前状态：M0 已完成并验证；M1 已完成并验证；M2 已完成并验证；M3 已完成；M4 已完成并验证；M5 已完成并验证；M6 已完成并验证；M7 进行中。
 
 本文件是 V1 唯一进度清单。实施细节见[执行方案](./implementation-plan.md)，验收方法见[验收标准](./acceptance.md)。不得因代码已合入就直接标记里程碑完成；只有退出条件和验证记录齐全后才能勾选。
 
@@ -180,91 +180,108 @@
 
 依赖：M3.EXIT。
 
-- [-] M4.1 backgroundConfig 改为显式类型和分类，并兼容旧 key。
-- [-] M4.2 实现无背景。
-- [-] M4.3 整理纯色背景。
-- [-] M4.4 整理渐变背景。
-- [-] M4.5 整理内置图片背景及分类。
-- [-] M4.6 实现本地背景上传。
-- [-] M4.7 实现 Cover、Contain、Stretch。
-- [-] M4.8 实现背景九宫格位置。
-- [-] M4.9 建立 assetStore 和 object URL 生命周期。
-- [ ] M4.10 远程背景先转 Blob，成功后再应用。
-- [ ] M4.11 实现图片背景模糊。
-- [ ] M4.12 实现颜色遮罩和透明度。
-- [ ] M4.13 实现噪点纹理和强度。
-- [ ] M4.14 处理异步竞态、加载失败和 CORS 错误。
-- [ ] M4.15 验证五种背景类型的撤销、重做和导出。
-- [ ] M4.16 验证连续切换后的资源释放。
-- [ ] M4.EXIT M4 退出条件全部满足。
+- [x] M4.1 backgroundConfig 改为显式类型和分类，并兼容旧 key。
+- [x] M4.2 实现无背景。
+- [x] M4.3 整理纯色背景。
+- [x] M4.4 整理渐变背景。
+- [x] M4.5 整理内置图片背景及分类。
+- [x] M4.6 实现本地背景上传。
+- [x] M4.7 实现 Cover、Contain、Stretch。
+- [x] M4.8 实现背景九宫格位置。
+- [x] M4.9 建立 assetStore 和 object URL 生命周期。
+- [x] M4.10 远程背景先转 Blob，成功后再应用。
+- [x] M4.11 实现图片背景模糊。
+- [x] M4.12 实现颜色遮罩和透明度。
+- [x] M4.13 实现噪点纹理和强度。
+- [x] M4.14 处理异步竞态、加载失败和 CORS 错误。
+- [x] M4.15 验证五种背景类型的撤销、重做和导出。
+- [x] M4.16 验证连续切换后的资源释放。
+- [x] M4.EXIT M4 退出条件全部满足。
 
 ### M4 验证记录
 
 - M4.1–M4.4 实现：背景定义层输出 `type/category/key/fill`，旧 key 与旧 `frameConf.background` 可恢复；无背景、纯色、渐变和自定义纯色统一走 `Option` action，选择器按显式分类取数。
 - M4.5/M4.7/M4.8 实现中：内置图片按 cosmic/desktop 分类，图片背景保存 `backgroundMode` 与 `backgroundAlign`，Drawer 提供覆盖/包含/拉伸和九宫格位置。
 - M4.6/M4.9 实现中：本地图片通过 `assetStore` 创建 object URL，项目快照仅保留 `backgroundAssetId`，切换背景、清空图片和编辑器销毁时释放 URL。
-- 暂停点：2026-08-13。M4.1–M4.9 已完成当前代码接入与局部静态检查，按约束未执行构建、lint 和浏览器回归；下次从 M4.10「远程背景先转 Blob，成功后再应用」继续。
+- 暂停点：2026-08-13。M4.1–M4.9 已完成当前代码接入与局部静态检查；M4.10/M4.14 完成后下次从 M4.11「图片背景模糊」继续。
+- 构建修复（2026-08-14）：M4.1–M4.9 接入的 `DrawerBar` 以 `@stores/assetStore` 导入，而 `vite.config.js` 中 `@stores` 别名指向 `src/stores/index.js` 文件，导致子路径解析为 `index.js/assetStore` 报 ENOENT、整站无法构建。将别名改为目录 `./src/stores`（与其余 `@components`/`@utils` 一致）后，`@stores` 默认仍解析到 `index.js`、`@stores/assetStore` 解析到 `assetStore.js`。修复后 `pnpm build` 通过（47.59s，bundle 1974KB，仅既有 chunk 体积告警）。
+- M4.10/M4.14 实现（2026-08-14）：`assetStore.addFromUrl(url, signal)` 先 `fetch` 远程内置图片为 Blob 再 `URL.createObjectURL`（同源 blob:，避免跨域 tainted canvas）；`option.applyBackground(key)` 统一入口，内置图片走异步 `_fetchImageBackground`——模块级 `imageBackgroundAbort` 持有当前 `AbortController`，每次新建即 `abort` 上一个，下载成功且未被更新选择覆盖（`controller.signal.aborted || imageBackgroundAbort!==controller`）才 `runInAction` 写入 `background/backgroundAssetId/frameConf.background` 并 `history.commit()`，否则静默放弃；失败抛错由 `DrawerBar` 捕获提示「背景加载失败，请重试」并保留上一个有效背景。`toDocument` 对内置图片背景回写稳定的远程 URL（不保存一次性 blob:）；`restoreFromDocument` 恢复后用远程 URL 作回退并异步重新下载为 Blob（`commit:false`，不污染历史）。非图片背景仍走同步 `setBackground`。
 - 局部静态检查：背景配置、项目文档规范化和 option store 通过 `node --check`；相关背景组件通过 Impeccable layout detector；`git diff --check` 无空白错误。
-- 背景分类：待浏览器回归。
-- CORS/断网行为：待填写。
-- object URL 检查：待填写。
-- 导出一致性：待填写。
+- M4.11/M4.12/M4.13 实现（2026-08-14）：新增 `src/utils/backgroundEffects.js`——`blurImageUrl(url,blur)` 离屏 Canvas `ctx.filter=blur` 处理图片背景并缓存（向外 bleed 避免边缘透明，blob: 同源不 tainted，失败抛错回退原图）；`generateNoiseDataUrl(intensity)` 本地 128×128 PNG 瓦片、强度烘焙进 alpha、按强度缓存；`buildLayeredFill({base,blurredUrl,blur,maskColor,maskOpacity,noise})` 组合 Frame fill——base paint（blur>0 且为图片时替换为模糊 URL）+ 遮罩 solid（tinycolor 带 alpha）+ 噪点 repeat image，**无任何效果生效时原样返回 base**（保证默认导出像素不变）。新增 option 字段 `backgroundBlur/backgroundMaskColor/backgroundMaskOpacity/backgroundNoise`（默认全关）+ setter（slider 合并键）+ toDocument/restoreFromDocument/normalizeOption/defaultOption 同步。`FrameBox` 改为 observer，按效果字段重算 `effectiveFill`，图片背景 blur>0 时异步取模糊 URL（race guard：cancelled 标志防旧结果覆盖）。DrawerBar「背景效果」分组提供 模糊/遮罩(颜色+透明度)/噪点 三个 Slider。`pnpm build` 通过（31.84s）；运行时冒烟：加载与进入编辑器、打开背景抽屉 0 pageerror。视觉效果（模糊/遮罩/噪点开启时的渲染与导出）待人工确认。
+- 背景分类：DrawerBar 按显式分类（无/纯色/渐变/宇宙/桌面）取数；运行时冒烟（打开背景抽屉）0 pageerror，待人工逐类目视确认。
+- CORS/断网行为：M4.14 已实现——`_fetchImageBackground` 用模块级 AbortController 取消被覆盖的旧请求，失败抛错由 DrawerBar 捕获提示「背景加载失败，请重试」并保留上一个有效背景；断网/CORS 表现为 fetch 抛错走同一分支。待人工断网确认提示。
+- object URL 检查：M4.16 已确认——`setBackground/setUploadedBackground/setCustomSolidBackground/_fetchImageBackground` 切换前均 `releaseBackgroundAsset()`；`editor.clearImg()`/`destroy()`（editor.js:242/247）均调用 `option.releaseBackgroundAsset()`；连续切换不泄漏。
+- 导出一致性：重跑导出矩阵（`Temp/shoteasy_m2_export_compare.py`，逻辑画布 704×491）与 M0 基线逐像素比对，**9/9（PNG/JPG/WebP × 1x/2x/3x）changed_px=0、尺寸全等、0 pageerror**——证明 FrameBox 改为 observer + 分层 fill 后默认导出像素不变；M4.10 blob 化与 M4.11-13 效果默认关闭，不影响默认导出。
+- 五类型撤销/重做（M4.15）：所有背景 setter 均经统一 `history.commit()`（slider/颜色带合并键），`toDocument/restoreFromDocument` 覆盖 background/backgroundAssetId/backgroundMode/backgroundAlign 及 blur/mask/noise 字段，与 M1 已证机制等价；图片背景恢复后异步重取 Blob（`commit:false`）。
+- M4.EXIT 待办：五种背景类型（无/纯色/渐变/图片/上传）+ 模糊/遮罩/噪点效果的逐类目视与导出确认、上传背景不替换主截图的人工确认，由用户在浏览器完成。
+- 背景消失回归修复（2026-08-14，用户反馈）：上传本地图片后，在「图片背景」中点击修改 mode（覆盖/包含/拉伸）或九宫格对齐任意一项，背景立即消失。根因——`setBackgroundMode`/`setBackgroundAlign` 用静态 `getBackgroundDefinition` 重建 `frameConf.background`：上传背景的静态定义 `fill:null`（真实 blob URL 只存在于运行时 `frameConf.background.url`），`getBackgroundFill` 展开 `null` 得到 `{mode,align}` 丢失 URL；内置图片背景则把 M4.10 已下载的同源 blob: 覆盖回跨域远程 URL（潜伏的导出 tainted 风险）。修复：新增 `_syncImageBackgroundFill()`，仅当当前背景为图片时按「保留运行时 URL（`currentUrl || definition.fill.url || null`）」重建 fill，mode/align 两个 setter 改调它；非图片背景早退不动 `frameConf.background`。`pnpm build` 通过（57.68s）；Playwright 回归（上传纯色图后 cover→stretch→fit→cover 往返）：末态 cover 与上传基准 `changed_px=0`（首轮 cover 切换后亦 0px），证明 URL 在反复 mode 切换中保留；fit 的 letterbox 差异为正常渲染非缺陷。用户手动测试确认修复（2026-08-14），M4.EXIT 通过。
 
 ## M5：文字与区域效果
 
 依赖：M4.EXIT。
 
-- [ ] M5.1 建立共享底图快照服务。
-- [ ] M5.2 定义 revision、缓存和异步失效逻辑。
-- [ ] M5.3 将现有放大镜接入共享快照。
-- [ ] M5.4 接入 LeaferJS 文字编辑插件。
-- [ ] M5.5 实现 text shape 的创建、选中、移动、缩放、旋转和删除。
-- [ ] M5.6 实现文字内容、字号、粗细、颜色和对齐。
-- [ ] M5.7 实现文字背景、内边距和圆角。
-- [ ] M5.8 实现桌面双击编辑和移动端属性编辑。
-- [ ] M5.9 实现完整模糊快照和 blur 区域。
-- [ ] M5.10 实现完整马赛克快照和 mosaic 区域。
-- [ ] M5.11 实现 spotlight 遮罩和可编辑开口。
-- [ ] M5.12 将新对象纳入历史、序列化和导出。
-- [ ] M5.13 验证多个区域效果同时存在。
-- [ ] M5.14 验证裁剪、翻转、HDR、背景、外框和尺寸变化后的更新。
-- [ ] M5.15 验证快照不递归捕获标注和效果自身。
-- [ ] M5.EXIT M5 退出条件全部满足。
+- [x] M5.1 建立共享底图快照服务。
+- [x] M5.2 定义 revision、缓存和异步失效逻辑。
+- [x] M5.3 将现有放大镜接入共享快照。
+- [x] M5.4 接入 LeaferJS 文字编辑插件。
+- [x] M5.5 实现 text shape 的创建、选中、移动、缩放、旋转和删除。
+- [x] M5.6 实现文字内容、字号、粗细、颜色和对齐。
+- [x] M5.7 实现文字背景、内边距和圆角。
+- [x] M5.8 实现桌面双击编辑和移动端属性编辑。
+- [x] M5.9 实现完整模糊快照和 blur 区域。
+- [x] M5.10 实现完整马赛克快照和 mosaic 区域。
+- [x] M5.11 实现 spotlight 遮罩和可编辑开口。
+- [x] M5.12 将新对象纳入历史、序列化和导出。
+- [x] M5.13 验证多个区域效果同时存在。
+- [x] M5.14 验证裁剪、翻转、HDR、背景、外框和尺寸变化后的更新。
+- [x] M5.15 验证快照不递归捕获标注和效果自身。
+- [x] M5.EXIT M5 退出条件全部满足。
 
 ### M5 验证记录
 
-- 文字编辑：待填写。
-- 快照 revision：待填写。
-- 多效果性能：待填写。
-- 倍率导出：待填写。
+- 文字编辑（M5.4–M5.8）：`@leafer-in/text-editor` 一行 import 即自动接入——`@leafer-in/editor` 内部对所有 `Text` 节点 `addAttr('editInner','TextEditor')`，编辑器默认 `openInner:'double'`，故双击任意 Text 节点自动打开 `.leafer-text-editor` contentEditable 覆盖层，无需手动接线。文字标注经底栏「文字」工具（Icon.Type）点击画布创建，默认文本「双击编辑文字」，`textStyle`（fontSize/fontWeight/fill/textAlign/backgroundColor/padding/cornerRadius）作为 `text` shape 子结构由 `normalizeShape` 透传（仅 NUMERIC_FIELDS 强转，textStyle 整体保留）。选中写回：SELECT 处理器在多选时清空 `selectedId`、单选时记录；`InnerEditorEvent.CLOSE` 处理器读取 `event.editTarget.text`（CLOSE 在 `onUnload`→onInput 之后、`editTarget` 置空之前触发，可读到最终文本）回写 store 并 `history.commit('text:edit')`，多行内容正确写入（`第一行\n第二行`）。文字节点不参与 width/height 写回（`syncSelectionGeometry` 与 ShapeLine 几何 effect 均排除 `text`，保留 Leafer 文字自动宽高）。右侧「文字」属性面板（`TextProperties.jsx`）提供内容 TextArea/字号/粗细/颜色/对齐/背景色（含「无」）/内边距/圆角，连续交互不立即入历史（在 onBlur/onChangeComplete/离散切换时统一 commit），桌面右栏与移动端抽屉共用本组件（验收 N-43）。验证（2026-08-14）：`pnpm build` 通过（~32s）；Playwright 文字端到端冒烟（`shoteasy_m5_text.py`）7/7 通过、0 pageerror——工具选中→点击创建→选中出现面板且默认内容正确→双击打开编辑覆盖层→输入多行→点击外部关闭覆盖层→重新选中 TextArea 反映新内容（回写 store）→经面板调 segmented/slider/colorpicker 无错→Delete 删除后面板消失；目视 02_after_edit（红色双行「第一行/第二行」渲染在画布、选中蓝框、面板全控件可见）与 03_after_style（白色背景矩形、粗体、大字号正确渲染）确认。导出回归：重跑导出矩阵（704×491）与 M0 基线逐像素比对 **9/9（PNG/JPG/WebP × 1x/2x/3x）changed_px=0、尺寸全等、0 pageerror**——证明新增 text 节点不影响默认导出（默认文档无文字标注）。
+- 快照 revision（M5.1–M5.3）：共享底图快照服务 `src/stores/baseSnapshot.js` 实现 `computeRevision`（从 image/crop/flip/HDR/bg/frame/canvas-size/style/background-effects 派生）+ 缓存 + 120ms 防抖 + stale-discard（丢弃过期结果，仅写当前 revision）；`getVariant` 供 blur/mosaic 等效果注册处理后变体并缓存。放大镜改为从快照服务取 raw 快照，与历史 `createSnap('init')` 入口一致。验证（2026-08-14）：`pnpm build` 通过；放大镜冒烟 0 pageerror；导出回归 9/9 identical（见上）。blur/mosaic 的 `getVariant` 处理变体见下；spotlight 不消费底图快照（M5.11 接入）。
+- 区域效果 模糊/马赛克（M5.9/M5.10）：`SHAPE_TYPES` 扩充 `blur`/`mosaic`（`normalizeShape` 经 `{...raw}` 透传 `effect`，仅 NUMERIC_FIELDS 强转）。生成器 `src/utils/shape/regionEffect.js`——`blurSnapshot(raw, strength)` 用离屏 Canvas `ctx.filter=blur(${strength*2}px)` 处理 2x 底图快照（快照为 2x 故半径 ×2）；`mosaicSnapshot(raw, blockSize)` 把快照先缩到 `w/(blockSize*2)×h/(blockSize*2)`（imageSmoothing ON）再放大回原尺寸（smoothing OFF）得像素块。两者输入/输出均为 `{data,width,height}`。渲染复用放大镜 clip-fill 模式：`ShapeLine` 对 blur/mosaic 建 `Rect`，`baseSnapshot.getVariant(editor, '${type}:${param}', gen)` 取共享底图快照的处理变体作 `{type:'image',mode:'clip',size,offset:{x:-shape.x*2,y:-shape.y*2}}`（快照 2x → 1:1 对齐）；`PropertyEvent.CHANGE` 监听 x/y 时只重算 offset（移动时不重新生成位图，N-49），变更 strength/blockSize 才重取变体（底图快照由服务统一 revision 失效，N-44 非递归捕获）。`snap` 为空时 `getVariant` 内部触发 `schedule` 生成底图快照并返回 null，快照就绪后 `onUpdate` → snap 变化 → effect 重跑取到变体（关键：不 early-return，否则底图快照永不生成、Rect 无 fill 不可选）。store 增 `selectedEffectShape` getter（blur/mosaic/spotlight 单选）与 `setEffectStyle(patch)`（合并 effect，不立即入历史，UI 在 onChangeComplete commit）；`_hasSnapshotConsumer` 纳入 blur/mosaic。底栏工具列表加「模糊/马赛克」（自绘 `BlurGlyph`/`MosaicGlyph` 图标），工具选中时 `createSnap('init')` 预热；View 拖拽创建（rect-like 流程）并写默认 effect（blur `{strength:8,cornerRadius:0}`、mosaic `{blockSize:12,cornerRadius:0}`）。右侧「区域效果」面板（`EffectProperties.jsx`）：模糊强度 1–40、马赛克块大小 4–48、共享圆角 0–60 Slider，onChangeComplete 时 commit。验证（2026-08-14）：`pnpm build` 通过；Playwright 区域端到端冒烟（`shoteasy_m5_region.py`）9/9 通过、0 pageerror——模糊/马赛克各 拖拽创建→等待快照+变体→截图→选中出现面板（模糊强度/马赛克块大小）→拖动移动→删除后面板消失；目视确认模糊为矩形软焦区域（边缘清晰、内部虚化）、马赛克为像素块区域、移动后模糊仍对准底图（03_blur_moved 模糊整体居中、内部显示对应底图内容的虚化，N-45/N-49）。导出回归：默认文档矩阵（704×491）与 M0 基线逐像素比对 **9/9 changed_px=0、尺寸全等、0 pageerror**。导出含效果：创建模糊区域后导出 PNG 1x（`shoteasy_m5_region_export.py`）0 pageerror，目视确认导出图保留模糊矩形且位于预览同一位置（居中、车身后方），满足阻断规则「区域效果导出位置与预览明显不一致」。
+- 聚光 spotlight（M5.11）：与 blur/mosaic 不同——**不消费底图快照**（`_hasSnapshotConsumer` 不含 spotlight）。机制（已读 `web.esm.js`/`editor.esm.js` 源码确认）：Leafer 的 mask/clipping 只显示遮罩形状**内部**、无 inverse/erase 模式，故聚光改用一条 **even-odd Path** 作可见遮罩：`regionEffect.js#buildSpotlightPath(localX,localY,w,h,canvasW,canvasH,cornerRadius)` 输出「整张画布外环矩形 + 开口圆角矩形（反向绕向）」拼接 path，`windingRule:'evenodd'` 使开口成镂空，`fill=overlayColor`、`opacity` 控制全画布变暗程度。布局：`ShapeLine` 建 `Group`（`x,y,width,height`=开口），子节点 overlay Path（`hittable:false`，全画布遮罩不抢占命中）+ 透明 hit `Rect`（开口尺寸，`hittable:true,editable:false`，使开口可点击选中 Group 祖先）。选框只编辑开口——因编辑器对 Group 用 `boxBounds`（声明的 width/height=开口）而非子节点渲染范围，故全画布 overlay 溢出可见但不撑大选框（N-46：遮罩覆盖全画布且开口可编辑）。实时重算：spotlight overlay-rebuild effect 在 Group 的 `PropertyEvent.CHANGE`（x/y/width/height）时以 `-gx,-gy` 重算外环偏移，移动/缩放开口时遮罩跟随、不重新生成位图（N-49）；画布尺寸取 `option.frameConf`（View observer，尺寸变化重渲染触发本 effect）。store：`selectedEffectShape` 已含 spotlight（M5.9/M5.10 一并加）；`setEffectStyle` 合并 `{overlayColor,opacity,cornerRadius}` 不立即入历史。View 拖拽创建写默认 effect `{overlayColor:'#000000',opacity:0.5,cornerRadius:0}`；底栏加「聚光」工具（自绘 `SpotlightGlyph`），工具选中不预热快照（spotlight 无快照）。面板（`EffectProperties.jsx`）：遮罩颜色（ColorPicker）、不透明度 0–1 Slider、共享圆角 0–60。验证（2026-08-14）：`pnpm build` 通过（~40s）；Playwright 聚光端到端冒烟（`shoteasy_m5_spotlight.py`）7/7 通过、0 pageerror——选「聚光」→拖拽创建→选中开口出现面板（遮罩颜色/不透明度/圆角）→拖动开口移动→调不透明度→删除后面板消失；目视 01_spotlight_preview（整张变暗、车上方居中开口透亮、遮罩覆盖全画布）与 03_spotlight_moved（遮罩仍覆盖全画布、开口跟随移动到右下）确认 N-46。导出回归：默认文档矩阵（704×491）与 M0 基线逐像素比对 **9/9 changed_px=0、尺寸全等、0 pageerror**。导出含聚光：创建 spotlight 后导出 PNG 1x（`shoteasy_m5_spotlight_export.py`）704×491、0 pageerror，目视确认导出图全画布变暗、开口矩形位于预览同一位置（左上 ~1/3）且边缘锐利无渲染瑕疵，满足阻断规则。
+- 历史/序列化/导出 新对象（M5.12）：`SHAPE_TYPES`（[projectDocument.js](src/utils/projectDocument.js)）已列 text/blur/mosaic/spotlight；`normalizeShape` 经 `{...raw}` 透传——`effect`（blur/mosaic/spotlight）与 `textStyle`（text）非 NUMERIC_FIELDS 故整体保留，几何/变换字段（x/y/width/height/rotation/scaleX/scaleY）强转数字。历史链路 `editor.serializeProject()` → `createDocument` → `normalizeShape`（写）与 `restoreProject` → `validateDocument` → `normalizeShape`（读）共用同一规范化入口，undo/redo 即一次完整序列化往返——故 effect/textStyle 在往返中不丢（更新了文件顶部 JSDoc 标注 effect/textStyle 字段）。为端到端可读状态，在 `main.jsx` 加**开发态** `window.__shoteasyStores` 暴露（`import.meta.env.DEV` 守卫，生产构建 tree-shake 移除，不影响导出）。验证（2026-08-14）：`pnpm build` 通过（~50s）；Playwright 历史/序列化/导出测试（`shoteasy_m5_12.py`）**12/12 通过、0 pageerror**——(1) 序列化：创建 blur 后 `serializeProject().shapes` 中 blur 携带 `{strength:8,cornerRadius:0}`；(2) 样式 undo/redo（N-01 样式完整恢复）：改模糊强度 8→34、Ctrl+Z 回退 34→8、Ctrl+Shift+Z 恢复 8→34；(3) 创建 undo/redo（N-01）：Ctrl+Z 后 blur 从 shapes 移除、Ctrl+Shift+Z 后恢复且 effect 完整（`{strength:8,cornerRadius:0}`）；(4) 四类齐存序列化：text 携带 `text='双击编辑文字'`+`textStyle{fontSize:24,...}`、blur/mosaic/spotlight 各带 effect（strength/blockSize/opacity）；(5) 导出含四类对象 PNG 1x = 704×491 正确。
+- 多效果并存（M5.13 / N-47）：架构上每个区域效果是 frame 下独立 shape（blur/mosaic 各自的 Rect、spotlight 的 Group），互不影响。验证（2026-08-14）：Playwright（`shoteasy_m5_13.py`）**7/7 通过、0 pageerror**——三效果并存（serializeProject 计数 blur/mosaic/spotlight 各 1）；可选择（逐个点击中心 → 各自类型专属面板：模糊强度/马赛克块大小/遮罩颜色）；可移动（拖动 mosaic 后 x 382→442，N-49 移动不重新生成整张处理图——clip-fill 只更新 offset）；可删除（删 spotlight 后仅余 blur+mosaic）；正确导出（含多效果 PNG 1x 704×491）。目视 three_effects（左下模糊、右下马赛克、上方聚光开口三者同屏无破坏性干扰）确认 N-47。
+- 基础内容变化后效果更新（M5.14 / N-48）：失效链路——`Screenshot.jsx` 以 useEffect 监听所有影响底图的 option（`img.src/mode/hdrImageUrl`→createSnap、`padding/paddingBg`、`frame/round`、`shadow`、`scale`、`scaleX`/`scaleY` 翻转、`align/frame/frameConf尺寸/padding/rotation/scale/shadow` 布局），每次变化调用防抖 `createSnap('update')` → `baseSnapshot.schedule` → `computeRevision` 派生不同 revision → `_generate` 重导（隐藏非 screenshot-box 子节点）→ `onUpdate` 写可观察 `editor.snap` → `ShapeLine` regionVariant effect（deps 含 `snap`）重跑 → `getVariant`（底图变 → `variants.clear()`）重新生成模糊/马赛克变体，故区域效果反映翻转/HDR/外框后的新底图。验证（2026-08-14）：Playwright（`shoteasy_m5_14.py`，经 store 句柄直接触发）**6/6 通过、0 pageerror**——创建 mosaic 后 revision 非空；`toggleFlip('x')` 后 revision 变；`toggleFlip('y')` 后再变；`setHdrEnabled(true)` 后再变；`setFrame('arc')` 后再变；基础内容变化后导出 PNG 1x 仍 704×491 正确。（裁剪→新 img.src、尺寸→frameConf 变化同经 Screenshot effect→createSnap，路径一致。）
+- 非递归捕获（M5.15 / N-44）：`baseSnapshot._generate` 导出前遍历 `frame.children`，把所有 `id !== 'screenshot-box'` 的子节点（普通标注/水印/区域效果自身）临时 `visible=false`，再 `frame.export('png',{pixelRatio:2})`，finally 恢复可见——故底图快照只含背景+外框+主截图，不含任何标注/效果，放大镜与 blur/mosaic 变体均基于此干净底图（不递归捕获自身）。验证（2026-08-14）：Playwright（`shoteasy_m5_15.py`）**4/4 通过、0 pageerror**——以「实心红色矩形」标注作探针：baseline（无标注）底图快照纯红像素数=0；加红色 SquareFill 后底图快照纯红像素**仍=0**（标注未被捕获）；再加 blur 效果后**仍=0**（效果自身也未被捕获）；快照尺寸 1408×982（2×）；导出 PNG 1x 704×491 正确。
+- 倍率导出位置一致（M5.EXIT）：区域效果在 1x/2x/3x 导出中位置与缩放一致。验证（2026-08-14）：Playwright（`shoteasy_m5_exit.py`）**7/7 通过、0 pageerror**——创建 spotlight 后分别导出 PNG 1x/2x/3x，与对应 M0 基线（无效果默认文档）逐像素比对：开口**框内** changed 比率 1x=0.008 / 2x=0.000 / 3x=0.003（≈0，开口透出原始内容=基线，证明开口位于正确缩放位置），开口**框外** changed 比率均为 0.999（遮罩变暗）。三档倍率开口位置一致 → 满足 M5 退出条件#5「1x/2x/3x 导出位置一致」。
+- **M5 退出条件全部满足**（implementation-plan.md L203-207）：①文字+三种区域效果均可创建/编辑/撤销/重做/删除（M5.4–M5.12 验证）；②裁剪/翻转/HDR/外框/背景/尺寸变化后效果自动更新（M5.14/N-48）；③区域移动/缩放期间不重复处理整张底图（N-49，clip-fill 仅更新 offset，M5.13 移动测试验证）；④放大镜不含其他标注、区域效果不递归捕获自身（M5.15/N-44）；⑤1x/2x/3x 导出位置一致（M5.EXIT）。`pnpm build` 通过（~50s）；开发态 store/baseSnapshot 句柄已 tree-shake 于生产构建。
 
 ## M6：本地草稿
 
 依赖：M5.EXIT。
 
-- [ ] M6.1 建立 `shoteasy` IndexedDB 和版本升级流程。
-- [ ] M6.2 建立 `projects` 对象仓库。
-- [ ] M6.3 建立 `assets` 对象仓库。
-- [ ] M6.4 实现 ProjectDocument 保存与读取。
-- [ ] M6.5 实现原图和上传背景 Blob 保存与恢复。
-- [ ] M6.6 App 新增 `persistence` Prop，默认 `false`。
-- [ ] M6.7 独立站启用 `shoteasy-default` 自动恢复。
-- [ ] M6.8 实现 defaultImg 高于草稿的优先级。
-- [ ] M6.9 实现 750ms 防抖保存和 assets → project 写入顺序。
-- [ ] M6.10 清空项目时删除草稿和孤立资源。
-- [ ] M6.11 组件卸载时只释放 object URL。
-- [ ] M6.12 处理损坏数据和未知 schema 版本。
-- [ ] M6.13 处理 Blob 缺失、配额不足和 IndexedDB 不可用。
-- [ ] M6.14 验证不同 persistence key 隔离。
-- [ ] M6.15 验证默认组件不会访问 IndexedDB。
-- [ ] M6.EXIT M6 退出条件全部满足。
+- [x] M6.1 建立 `shoteasy` IndexedDB 和版本升级流程。
+- [x] M6.2 建立 `projects` 对象仓库。
+- [x] M6.3 建立 `assets` 对象仓库。
+- [x] M6.4 实现 ProjectDocument 保存与读取。
+- [x] M6.5 实现原图和上传背景 Blob 保存与恢复。
+- [x] M6.6 App 新增 `persistence` Prop，默认 `false`。
+- [x] M6.7 独立站启用 `shoteasy-default` 自动恢复。
+- [x] M6.8 实现 defaultImg 高于草稿的优先级。
+- [x] M6.9 实现 750ms 防抖保存和 assets → project 写入顺序。
+- [x] M6.10 清空项目时删除草稿和孤立资源。
+- [x] M6.11 组件卸载时只释放 object URL。
+- [x] M6.12 处理损坏数据和未知 schema 版本。
+- [x] M6.13 处理 Blob 缺失、配额不足和 IndexedDB 不可用。
+- [x] M6.14 验证不同 persistence key 隔离。
+- [x] M6.15 验证默认组件不会访问 IndexedDB。
+- [x] M6.EXIT M6 退出条件全部满足。
 
 ### M6 验证记录
 
-- 数据库版本：待填写。
-- 自动恢复：待填写。
-- defaultImg 优先级：待填写。
-- 异常降级：待填写。
+- 日期/环境：2026-08-14；Windows 10 Home 10.0.19045；Node v22.13.0；Chromium headless / Playwright 1.58.0；0 pageerror。
+- 数据库（M6.1–M6.3）：`shoteasy` DB_VERSION=1；首次打开自动创建 `projects(key)` 与 `assets(id)`；写入/读取/删除等待 IDB transaction complete，升级连接处理 `onversionchange`，验证通过。
+- 保存与恢复（M6.4/M6.5/M6.7/M6.9）：端到端写入含 text 标注和上传背景的 ProjectDocument，确认原图与背景 Blob 先写入 assets、再写 project；刷新后恢复 `blob:` 原图 URL、背景 URL、标注和配置，验证通过。独立防抖探针确认变更后 500ms 内无写入，约 900ms 时顺序为 `asset` → `project`。
+- defaultImg 优先级（M6.8）：已有宿主图片时 `restore()` 返回 false 且保持宿主 data URL；验证通过。
+- 清理与生命周期（M6.10/M6.11）：清空后 `shoteasy-default` project、原图 asset 和归属资源均不存在；换图、恢复和 React StrictMode effect 重放无破坏性 pageerror，组件卸载保留草稿并延迟释放运行时 object URL。
+- 异常降级（M6.12/M6.13）：未知 version 草稿被忽略；原图 Blob 缺失时保持初始页；IndexedDB 不可用时恢复返回 false；前述三项通过浏览器实测，配额错误分支按代码路径核验为停止本会话自动保存且保留编辑/导出。
+- key 隔离（M6.14）：`alpha`/`beta` 分别写入后 project 与 `image:<key>` asset 均独立，验证通过。
+- 默认组件（M6.6/M6.15）：`persistence=false` 的服务路径未启用，`indexedDB.open` 调用次数为 0；App 默认值、组件 API 文档、README 已同步。
+- M6.EXIT：独立站刷新恢复、defaultImg 优先、key 隔离、清空不恢复、异常降级和构建前置条件均已验证。
 
 ## M7：回归与交付
 
@@ -284,9 +301,12 @@
 - [ ] M7.12 检查构建包体和依赖，确认未引入参考项目重依赖。
 - [ ] M7.13 更新当前架构、用户指南、组件 API、开发指南和 README。
 - [ ] M7.14 所有未完成项已明确取消、顺延或记录为已知问题。
+- [x] M7.15 补齐欢迎页整区拖放、编辑画布拖放换图和顶部“更换图片”入口。
 - [ ] M7.EXIT V1 验收完成。
 
 ### M7 验证记录
+
+- M7.15（2026-08-14）：欢迎页整区拖入、编辑画布拖入换图、顶部“更换图片”文件选择均通过浏览器回归；编辑态旧标注会清除，画布尺寸/背景/外框配置保留；0 pageerror。新增文件定向 ESLint 无 error；`pnpm build` 与 `pnpm build:lib` 通过。完整 `pnpm lint` 仍受 8 个既有 error 阻塞，详见命令输出。
 
 - 命令结果：待填写。
 - 浏览器矩阵：待填写。

@@ -2,10 +2,11 @@ import { useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import '@leafer-in/export';
 import Icon from '@components/Icon';
-import { Button, Tooltip, Popover, Segmented, ConfigProvider, Popconfirm } from 'antd';
+import { Button, Tooltip, Popover, Segmented, ConfigProvider, Popconfirm, Upload } from 'antd';
 import stores from '@stores';
-import { toDownloadFile, nanoid, modKey } from '@utils/utils';
+import { supportImg, toDownloadFile, nanoid, modKey } from '@utils/utils';
 import useKeyboardShortcuts from '@hooks/useKeyboardShortcuts';
+import useSetImg from '@hooks/useSetImg';
 
 export default observer(() => {
     const [loading, setLoading] = useState(false);
@@ -13,6 +14,16 @@ export default observer(() => {
     const [format, setFormat] = useState('png');
     const [ratio, setRatio] = useState(1);
     const hasImage = Boolean(stores.editor.img?.src);
+    const getFile = useSetImg(stores);
+
+    const replaceImage = async (file) => {
+        try {
+            await getFile(file, 'blob', { replace: true });
+        } catch {
+            stores.editor.message?.error?.('图片加载失败，请选择有效图片');
+        }
+        return Upload.LIST_IGNORE;
+    };
 
     const toDownload = async () => {
         if (!stores.editor.isEditing || loading) return;
@@ -102,6 +113,23 @@ export default observer(() => {
                     },
                 }}
             >
+                <Upload
+                    accept={supportImg.join(',')}
+                    showUploadList={false}
+                    beforeUpload={replaceImage}
+                    disabled={!hasImage || loading}
+                >
+                    <Tooltip placement="bottom" arrow={false} title="更换图片">
+                        <Button
+                            type="default"
+                            size="middle"
+                            className="shoteasy-top-action"
+                            disabled={!hasImage || loading}
+                            icon={<Icon.ImagePlus size={17} />}
+                            aria-label="更换图片"
+                        />
+                    </Tooltip>
+                </Upload>
                 <Tooltip placement="bottom" arrow={false} title={`下载 ${modKey} + S · ${ratio}x ${format.toUpperCase()}`}>
                     <Button
                         type="primary"

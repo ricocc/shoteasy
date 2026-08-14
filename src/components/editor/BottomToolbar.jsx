@@ -8,7 +8,7 @@ import EmojiSelect from '@components/header/EmojiSelect';
 import { nanoid, cn } from '@utils/utils';
 import stores from '@stores';
 
-const toolList = ['Square', 'SquareFill', 'Circle', 'Slash', 'MoveDownLeft', 'Pencil', 'Magnifier', 'Step', 'Smile'];
+const toolList = ['Square', 'SquareFill', 'Circle', 'Slash', 'MoveDownLeft', 'Pencil', 'Magnifier', 'Step', 'text', 'blur', 'mosaic', 'spotlight', 'Smile'];
 const toolLabels = {
     Square: '矩形',
     SquareFill: '实心矩形',
@@ -18,6 +18,10 @@ const toolLabels = {
     Pencil: '画笔',
     Magnifier: '放大镜',
     Step: '步骤序号',
+    text: '文字',
+    blur: '模糊',
+    mosaic: '马赛克',
+    spotlight: '聚光',
     Smile: '表情',
 };
 
@@ -28,7 +32,7 @@ export default observer(() => {
         const { useTool } = stores.editor;
         stores.editor.setUseTool(useTool === type ? null : type);
         setIsMove(false);
-        if (type === 'Magnifier') stores.editor.createSnap('init');
+        if (type === 'Magnifier' || type === 'blur' || type === 'mosaic') stores.editor.createSnap('init');
     };
     const handleSelectEmoji = (emoji) => {
         if (!stores.editor.isEditing) return;
@@ -71,6 +75,14 @@ export default observer(() => {
                         icon = <Icon.Magnifier size={16} />;
                     } else if (item === 'Step') {
                         icon = <span className="shoteasy-step-badge">{stores.editor.nextStep}</span>;
+                    } else if (item === 'text') {
+                        icon = <Icon.Type size={16} />;
+                    } else if (item === 'blur') {
+                        icon = <Icon.Blur size={16} />;
+                    } else if (item === 'mosaic') {
+                        icon = <Icon.Mosaic size={16} />;
+                    } else if (item === 'spotlight') {
+                        icon = <Icon.Spotlight size={16} />;
                     } else {
                         const IconComp = Icon[item];
                         icon = IconComp ? <IconComp size={16} /> : null;

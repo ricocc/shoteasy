@@ -1,7 +1,8 @@
 import { useEffect } from 'react';
 import { observer } from 'mobx-react-lite';
 import { App, ResizeEvent, ZoomEvent, DragEvent, PointerEvent, Cursor } from 'leafer-ui';
-import { EditorMoveEvent, EditorScaleEvent, EditorRotateEvent } from '@leafer-in/editor';
+import { EditorMoveEvent, EditorScaleEvent, EditorRotateEvent, InnerEditorEvent } from '@leafer-in/editor';
+import '@leafer-in/text-editor';
 import debounce from 'lodash/debounce';
 import { addListener, removeListener } from 'resize-detector';
 import rotatePng from '@assets/rotate.png';
@@ -21,6 +22,9 @@ Cursor.set('pencil', { url: pencilPng });
 
 export default observer(({target}) => {
     useEffect(() => {
+        // React StrictMode 会先执行一次模拟 cleanup，再重新 setup；取消上一次
+        // 延迟销毁，避免恢复中的 shapes/background 被误清空。
+        stores.editor.cancelScheduledDestroy();
         const app = new App({
             view: target,
             editor: {
@@ -60,6 +64,8 @@ export default observer(({target}) => {
 
         app.editor.on(EditorMoveEvent.SELECT, (event) => {
             const { list } = event;
+            // 单选时同步选中标注 id，驱动右侧「文字」属性面板；多选/无选清空。
+            stores.editor.setSelectedId(list.length === 1 ? list[0].id : null);
             if (list.length < 2) return;
             if (list.some(e => e.tag === 'Magnifier')) {
                 app.editor.config.rotateable = false;
@@ -67,6 +73,20 @@ export default observer(({target}) => {
             } else {
                 app.editor.config.rotateable = true;
                 app.editor.config.lockRatio = false;
+            }
+        });
+
+        // 文字标注双击编辑结束（@leafer-in/text-editor 关闭）后，把编辑后的内容回写 store 并入历史。
+        // CLOSE 事件在 editTarget 被置空前触发，且 onUnload 已执行 onInput，故 node.text 为最终值。
+        app.editor.on(InnerEditorEvent.CLOSE, (event) => {
+            const node = event.editTarget;
+            if (!node) return;
+            const shape = stores.editor.getShape(node.id);
+            if (!shape || shape.type !== 'text') return;
+            const next = node.text == null ? '' : String(node.text);
+            if (shape.text !== next) {
+                stores.editor.updateShape({ ...shape, text: next });
+                stores.history.commit('text:edit');
             }
         });
 
@@ -105,7 +125,7 @@ export default observer(({target}) => {
                 if (['Slash', 'MoveDownLeft', 'Pencil'].includes(shape.type)) {
                     // 线条类：同步 points（位移与尺寸都体现在 points / x / y 上）
                     if (node.points) update.points = Array.from(node.points);
-                } else if (shape.type !== 'Step') {
+                } else if (shape.type !== 'Step' && shape.type !== 'text') {
                     update.width = node.width;
                     update.height = node.height;
                 }
@@ -139,14 +159,30 @@ export default observer(({target}) => {
                 zIndex: stores.editor.shapes.size + 1,
                 ...size
             };
+            if (type === 'blur') newShape.effect = { strength: 8, cornerRadius: 0 };
+            else if (type === 'mosaic') newShape.effect = { blockSize: 12, cornerRadius: 0 };
+            else if (type === 'spotlight') newShape.effect = { overlayColor: '#000000', opacity: 0.5, cornerRadius: 0 };
             return newShape;
         }
         app.tree.on(PointerEvent.DOWN, (arg) => {
             const type = stores.editor.useTool;
-            if (type !== 'Step') return;
+            if (type !== 'Step' && type !== 'text') return;
             const newShape = onStart(arg);
             if (!newShape) return;
-            newShape.text = stores.editor.nextStep;
+            if (type === 'Step') {
+                newShape.text = stores.editor.nextStep;
+            } else if (type === 'text') {
+                newShape.text = '双击编辑文字';
+                newShape.textStyle = {
+                    fontSize: 24,
+                    fontWeight: 'normal',
+                    fill: stores.editor.annotateColor,
+                    textAlign: 'left',
+                    backgroundColor: null,
+                    padding: 0,
+                    cornerRadius: 0,
+                };
+            }
             newShape.editable = true;
             stores.editor.addShape(newShape);
             shapeId = null;
@@ -216,7 +252,7 @@ export default observer(({target}) => {
 
         return (() => {
             removeListener(target, onResize);
-            stores.editor.destroy();
+            stores.editor.scheduleDestroy();
         });
     }, [target]);
 
@@ -245,7 +281,8 @@ export default observer(({target}) => {
         <FrameBox parent={stores.editor.app.tree} cursor={stores.editor.cursor} {...stores.option.frameConf}>
             {stores.editor.shapesList.map((item) => {
                 const { id, type } = item;
-                const props = Object.assign({}, item, type === 'Magnifier' ? {snap: stores.editor.snap} : {});
+                const needSnap = type === 'Magnifier' || type === 'blur' || type === 'mosaic';
+            const props = Object.assign({}, item, needSnap ? {snap: stores.editor.snap} : {});
                 return <ShapeLine key={id} {...props} />;
             })}
             {stores.editor.img?.src && <Screenshot />}

@@ -5,6 +5,7 @@ import { supportImg, cn } from '@utils/utils';
 import stores from '@stores';
 import usePaste from '@hooks/usePaste';
 import useSetImg from '@hooks/useSetImg';
+import useImageDrop from '@hooks/useImageDrop';
 import { captureScreen } from '@utils/captureScreen';
 import demoPng from '@assets/demo.png';
 
@@ -14,7 +15,14 @@ export default observer(() => {
     const getFile = useSetImg(stores);
     const beforeUpload = async (file) => {
         await getFile(file);
-        return Promise.reject();
+        return Upload.LIST_IGNORE;
+    };
+    const handleDropFile = async (file) => getFile(file);
+    const showImageError = () => stores.editor.message?.error?.('图片加载失败，请选择有效图片');
+    const { isDragging, dragProps } = useImageDrop(handleDropFile, showImageError);
+    const onDrop = (event) => {
+        if (event.target?.closest?.('.shoteasy-upload-card')) return;
+        dragProps.onDrop(event);
     };
     const onCapture = async () => {
         const dataURL = await captureScreen();
@@ -29,7 +37,19 @@ export default observer(() => {
     });
 
     return (
-        <div className="shoteasy-empty-state">
+        <div
+            className={cn('shoteasy-empty-state shoteasy-drop-surface', isDragging && 'is-dragging')}
+            onDragEnter={dragProps.onDragEnter}
+            onDragOver={dragProps.onDragOver}
+            onDragLeave={dragProps.onDragLeave}
+            onDrop={onDrop}
+        >
+            {isDragging && (
+                <div className="shoteasy-drop-overlay" aria-hidden="true">
+                    <Icon.ImagePlus size={30} />
+                    <span>释放以添加图片</span>
+                </div>
+            )}
             <div className={cn('shoteasy-empty-state__content', stores.editor.invalid && 'invalid')}>
                 <div className="shoteasy-empty-state__heading">
                     <div className="shoteasy-empty-state__mark">

@@ -11,6 +11,8 @@ import CropperImage from './CropperImage';
 import Position from './Position';
 import Watermark from './Watermark';
 import DrawerBar from './DrawerBar';
+import TextProperties from './TextProperties';
+import EffectProperties from './EffectProperties';
 
 /** 可折叠分组。 */
 function Section({ title, defaultOpen = true, children }) {
@@ -45,6 +47,20 @@ export const InspectorContent = observer(() => {
     return (
         <div className="shoteasy-inspector relative h-full flex flex-col">
             <div className="shoteasy-inspector__scroll flex-1 overflow-y-auto overflow-x-hidden px-4">
+                {/* 文字（仅单选文字标注时出现，桌面右栏与移动端抽屉共用） */}
+                {stores.editor.selectedTextShape && (
+                    <Section title="文字">
+                        <TextProperties />
+                    </Section>
+                )}
+
+                {/* 区域效果（仅单选模糊/马赛克/聚光标注时出现） */}
+                {stores.editor.selectedEffectShape && (
+                    <Section title="区域效果">
+                        <EffectProperties />
+                    </Section>
+                )}
+
                 {/* 背景 */}
                 <Section title="背景">
                     <div className="flex justify-between items-center">

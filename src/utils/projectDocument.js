@@ -14,7 +14,10 @@ const BACKGROUND_ALIGNS = ['top-left', 'top', 'top-right', 'left', 'center', 'ri
  * {
  *   version: 1,
  *   option: { ...画框/背景/尺寸等配置 },
- *   shapes: [ { id, type, fill, strokeWidth, zIndex, x, y, width, height, points, text, editable } ]
+ *   shapes: [ { id, type, fill, strokeWidth, zIndex, x, y, width, height, rotation, scaleX, scaleY,
+ *               points, text, textStyle, effect, editable } ]
+ *   // text 携带 textStyle 子结构；blur/mosaic/spotlight 携带 effect 子结构；
+ *   // 两者均经 normalizeShape 的 {...raw} 透传（非 NUMERIC_FIELDS，整体保留）。
  * }
  *
  * 视图缩放（editor.scale）、主题（editor.theme）、面板开合、导出格式与倍率等
@@ -38,7 +41,11 @@ export const SHAPE_TYPES = [
     'Pencil',
     'Magnifier',
     'Step',
-    'emoji'
+    'emoji',
+    'text',
+    'blur',
+    'mosaic',
+    'spotlight'
 ];
 
 const NUMERIC_FIELDS = ['x', 'y', 'width', 'height', 'strokeWidth', 'zIndex', 'rotation', 'scaleX', 'scaleY'];
@@ -63,6 +70,10 @@ export function defaultOption() {
         backgroundAssetId: null,
         backgroundMode: 'cover',
         backgroundAlign: 'center',
+        backgroundBlur: 0,
+        backgroundMaskColor: '#000000',
+        backgroundMaskOpacity: 0,
+        backgroundNoise: 0,
         align: 'center',
         waterImg: null,
         waterIndex: 1,
@@ -86,6 +97,7 @@ export function defaultDocument() {
     return {
         version: PROJECT_VERSION,
         option: defaultOption(),
+        image: null,
         shapes: []
     };
 }
@@ -152,6 +164,13 @@ export function normalizeOption(raw) {
     out.backgroundAlign = BACKGROUND_ALIGNS.includes(rawBackgroundAlign) ? rawBackgroundAlign : base.backgroundAlign;
     const rotation = Number(raw.rotation);
     out.rotation = Number.isFinite(rotation) ? Math.max(-180, Math.min(180, rotation)) : base.rotation;
+    const blur = Number(raw.backgroundBlur);
+    out.backgroundBlur = Number.isFinite(blur) ? Math.max(0, Math.min(30, blur)) : base.backgroundBlur;
+    const maskOpacity = Number(raw.backgroundMaskOpacity);
+    out.backgroundMaskOpacity = Number.isFinite(maskOpacity) ? Math.max(0, Math.min(1, maskOpacity)) : base.backgroundMaskOpacity;
+    const noise = Number(raw.backgroundNoise);
+    out.backgroundNoise = Number.isFinite(noise) ? Math.max(0, Math.min(1, noise)) : base.backgroundNoise;
+    out.backgroundMaskColor = (typeof raw.backgroundMaskColor === 'string' && raw.backgroundMaskColor) ? raw.backgroundMaskColor : base.backgroundMaskColor;
     out.size = { ...base.size, ...(raw.size || {}) };
     out.frameConf = { ...base.frameConf, ...(raw.frameConf || {}) };
     const rawFill = raw.frameConf?.background ?? (rawBackground && typeof rawBackground === 'object' ? rawBackground.fill : undefined);
@@ -174,14 +193,27 @@ export function normalizeOption(raw) {
 }
 
 /**
+ * 规范化主图引用（M6）。{ assetId, width, height, type, name } 全为可序列化值；
+ * 宽高强转数字。draftService 保存时填入 assetId（`image:<key>`）与 editor.img 元数据。
+ */
+export function normalizeImage(raw) {
+    if (!raw || typeof raw !== 'object') return null;
+    const out = { ...raw };
+    if (out.width != null) { const n = Number(out.width); out.width = Number.isFinite(n) ? n : 0; }
+    if (out.height != null) { const n = Number(out.height); out.height = Number.isFinite(n) ? n : 0; }
+    return out;
+}
+
+/**
  * 把当前 store 中的 option 与 shapes（已经是 toJS 后的纯数据）打包成 V1 文档。
  * 这是“旧 store 数据到 V1 文档”的迁移入口：旧 shape 经 normalizeShape 规范化，
  * 旧 option 经 normalizeOption 补齐。输入必须是纯值，调用方负责 toJS。
  */
-export function createDocument({ option, shapes } = {}) {
+export function createDocument({ option, shapes, image } = {}) {
     return {
         version: PROJECT_VERSION,
         option: normalizeOption(option),
+        image: normalizeImage(image),
         shapes: Array.isArray(shapes) ? shapes.map(normalizeShape).filter(Boolean) : []
     };
 }
@@ -211,6 +243,7 @@ export function validateDocument(input) {
     const doc = {
         version: PROJECT_VERSION,
         option: normalizeOption(input.option),
+        image: normalizeImage(input.image),
         shapes: Array.isArray(input.shapes) ? input.shapes.map(normalizeShape).filter(Boolean) : []
     };
     return { ok: errors.length === 0, doc, errors };

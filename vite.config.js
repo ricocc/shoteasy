@@ -33,7 +33,7 @@ export default defineConfig({
             '@components': resolve('./src/components'),
             '@assets': resolve('./src/assets'),
             '@style': resolve('./src/style'),
-            '@stores': resolve('./src/stores/index.js'),
+            '@stores': resolve('./src/stores'),
             '@utils': resolve('./src/utils'),
             '@hooks': resolve('./src/hooks'),
         },

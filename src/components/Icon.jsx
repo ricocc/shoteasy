@@ -159,6 +159,37 @@ const wrap = (Glyph) => function WrappedIcon({ size, className, ...rest }) {
     );
 };
 
+// 模糊：同心圆表示失焦
+const BlurGlyph = ({ className }) => (
+    <svg {...strokeProps} className={className}>
+        <circle cx="12" cy="12" r="3.2" />
+        <circle cx="12" cy="12" r="7.6" opacity="0.5" />
+    </svg>
+);
+// 马赛克：四宫格
+const MosaicGlyph = ({ className }) => (
+    <svg {...strokeProps} className={className}>
+        <rect x="3.5" y="3.5" width="7" height="7" rx="1" />
+        <rect x="13.5" y="3.5" width="7" height="7" rx="1" />
+        <rect x="3.5" y="13.5" width="7" height="7" rx="1" />
+        <rect x="13.5" y="13.5" width="7" height="7" rx="1" />
+    </svg>
+);
+// 聚光：中心圆 + 放射光线
+const SpotlightGlyph = ({ className }) => (
+    <svg {...strokeProps} className={className}>
+        <circle cx="12" cy="12" r="4" />
+        <line x1="12" y1="2" x2="12" y2="4.6" />
+        <line x1="12" y1="19.4" x2="12" y2="22" />
+        <line x1="2" y1="12" x2="4.6" y2="12" />
+        <line x1="19.4" y1="12" x2="22" y2="12" />
+        <line x1="4.9" y1="4.9" x2="6.8" y2="6.8" />
+        <line x1="17.2" y1="17.2" x2="19.1" y2="19.1" />
+        <line x1="19.1" y1="4.9" x2="17.2" y2="6.8" />
+        <line x1="6.8" y1="17.2" x2="4.9" y2="19.1" />
+    </svg>
+);
+
 export default {
     Camera: wrap(CameraIcon),
     Check: wrap(CheckIcon),
@@ -204,4 +235,7 @@ export default {
     Moon: wrap(MoonIcon),
     Magnifier: wrap(SearchIcon),
     MessageCirclePlus: wrap(SearchIcon),
+    Blur: wrap(BlurGlyph),
+    Mosaic: wrap(MosaicGlyph),
+    Spotlight: wrap(SpotlightGlyph),
 };

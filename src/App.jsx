@@ -10,10 +10,11 @@ import { StyleProvider } from '@ant-design/cssinjs';
 import Init from '@components/init/Init';
 import stores from '@stores';
 import useSetImg from '@hooks/useSetImg';
+import draftService from '@stores/draftService';
 import { cn } from '@utils/utils';
 import '@style/main.css';
 
-export default observer(({ defaultImg, headLeft, headRight, isDark, boxClassName = '', onClear }) => {
+export default observer(({ defaultImg, headLeft, headRight, isDark, boxClassName = '', onClear, persistence = false }) => {
   const getFile = useSetImg(stores);
   const isEditing = !!stores.editor.img?.src;
   const workplace = isEditing ? <Editor /> : <Init />
@@ -32,6 +33,31 @@ export default observer(({ defaultImg, headLeft, headRight, isDark, boxClassName
   useEffect(() => {
     if (defaultImg) getFile(defaultImg, 'dataURL');
   }, [defaultImg]);
+  const persistenceKey = persistence && typeof persistence === 'object' ? persistence.key : null;
+  const persistenceAutoRestore = persistence && typeof persistence === 'object'
+    ? persistence.autoRestore !== false
+    : false;
+  // 草稿持久化（M6.6/M6.7）：登记配置 + 启动自动保存；卸载时只释放反应，不删草稿。
+  // persistence 为 false/undefined 时 setup 直接禁用，不访问 IndexedDB（M6.15）。
+  useEffect(() => {
+    draftService.setup(persistenceKey ? { key: persistenceKey, autoRestore: persistenceAutoRestore } : false);
+    return () => draftService.teardown();
+  }, [persistenceKey, persistenceAutoRestore]);
+  // 组件卸载时释放主图 object URL；Editor.destroy 不能承担该职责，因为
+  // Leafer View effect 在 React StrictMode 下会经历一次模拟 cleanup。
+  useEffect(() => {
+    stores.editor.cancelScheduledImageRelease();
+    return () => stores.editor.scheduleImageRelease();
+  }, []);
+  // 自动恢复（M6.7）：仅当启用 persistence.autoRestore 且未传 defaultImg 时尝试恢复。
+  // defaultImg 存在时跳过恢复，由上面的 defaultImg effect 建立新项目（M6.8 优先级）。
+  useEffect(() => {
+    if (persistenceKey && persistenceAutoRestore && !defaultImg) {
+      draftService.restore();
+    }
+    // defaultImg 只决定首次挂载时是否跳过恢复，后续变化不应再次触发恢复。
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [persistenceKey, persistenceAutoRestore]);
   return (
     <StyleProvider>
       <ConfigProvider

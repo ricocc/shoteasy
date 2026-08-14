@@ -19,9 +19,15 @@ import { ImageBeautifier } from 'image-beautifier';
 import 'image-beautifier/lib/style.css';
 
 function App() {
-  return (<ImageBeautifier />);
+  return (
+    <ImageBeautifier
+      persistence={{ key: 'my-editor', autoRestore: true }}
+    />
+  );
 }
 ```
+
+组件默认不读写本地草稿；需要恢复草稿时显式传入 `persistence`。完整 Props 说明见 [`DOCS/component-api.md`](DOCS/component-api.md)。
 
 - 用于截图美化
 - 图片批注
