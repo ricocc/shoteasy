@@ -74,6 +74,8 @@ React View → Leafer App → Frame（最终画布）
 
 ### FrameBox
 
+画布背景固定使用 20px 圆角，并由最外层 `Frame` 负责裁切，编辑器预览与导出保持一致。
+
 `FrameBox.jsx` 创建固定宽高、裁切溢出的 Leafer `Frame`，其 `fill` 是最终背景。它把 `parent: frame` 注入所有 React 图层子组件。
 
 ### Screenshot
@@ -84,7 +86,9 @@ React View → Leafer App → Frame（最终画布）
 - `box`：图片可见区域及留白底色。
 - `image`：实际图片填充、翻转与适配模式。
 
-选择浏览器标题栏时，会添加 32px 高的标题栏；选择设备框时，会根据每个设备的比例常量计算屏幕开口。HDR 开启后先通过 Canvas 生成增强后的 data URL，再替换图片填充。
+`container` 同时承载视觉 3D：`rotationX`/`rotationY` 与内部 `perspective` 强度先映射为非等比 `scaleX`/`scaleY` 和 `skewX`/`skewY`，再叠加现有 `rotation`（Z 轴）。渲染前按相同矩阵计算四角外接边界参与对齐，因此缩略图、画布和导出共用同一套仿射结果；这不是精确透视投影。
+
+选择浏览器外框时，会按 Safari/Chrome/Arc 定义创建 Leafer `Rect`/`Text` 与项目内 SVG 图标节点；标题栏基准高度按样式区分，再乘以 `browserHeaderSize`（50%–200%，默认 100%），地址栏渲染 `browserUrl`。标题高度会从图片可用高度中扣除，保证整个浏览器框仍落在画布布局范围内。选择设备框时，会根据每个设备的比例常量计算屏幕开口。HDR 开启后先通过 Canvas 生成增强后的 data URL，再替换图片填充。
 
 ### ShapeLine
 

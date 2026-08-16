@@ -2,7 +2,7 @@
 
 ## 项目定位
 
-ShotEasy（包名 `image-beautifier`）将一张本地图片、粘贴图片或屏幕截图放入可配置画布，叠加背景、留白、圆角、阴影、浏览器/设备外框、标注、水印与 HDR 风格处理，最后导出 PNG、JPG 或 WebP。
+RicoScreenshot（包名 `image-beautifier`）将一张本地图片、粘贴图片或屏幕截图放入可配置画布，叠加背景、留白、圆角、阴影、浏览器/设备外框、标注、水印与 HDR 风格处理，最后导出 PNG、JPG 或 WebP。
 
 项目提供两种交付形态：
 
@@ -16,7 +16,8 @@ ShotEasy（包名 `image-beautifier`）将一张本地图片、粘贴图片或�
 - 缩放、裁剪、水平/垂直翻转和九宫格对齐。
 - 图片留白、留白颜色、圆角、阴影和整体缩放。
 - 纯色、渐变、Unsplash 远程图片背景。
-- 浅色/深色描边、macOS/Windows 标题栏，以及 MacBook、iMac、iPad、iPhone 设备框。
+- 基础/创意外框、可配置 URL 与顶部尺寸的 Safari/Chrome/Arc 浏览器框，以及 MacBook、iMac、iPad、iPhone 设备框。
+- 可导出的视觉 3D 旋转：X/Y/Z 三轴、仿射立体强度、六个快捷角度和一次性撤销/重做。
 - 矩形、实心矩形、圆形、直线、箭头、自由画笔、局部放大镜、步骤编号和 Emoji 标注。
 - 重复文字水印，可切换到截图下方；浏览器 Canvas 实现的 HDR 风格增强。
 - PNG/JPG/WebP 导出，1x/2x/3x 像素倍率，以及 PNG 剪贴板复制。
@@ -25,7 +26,7 @@ ShotEasy（包名 `image-beautifier`）将一张本地图片、粘贴图片或�
 
 ## 尚未完成或未接入
 
-- 撤销/重做：`src/utils/UndoRedoManager.js` 已存在，但没有被应用使用，头部按钮也被注释。
+- 撤销/重做：已接入顶部栏；渐变角度、图片样式重置等操作会生成可恢复的项目历史记录。
 - 文本美化、代码美化和 GIF：当前不提供入口，仍不属于可用功能。
 - 自动化测试：`package.json` 没有 `test` 脚本，仓库内也没有测试文件。
 - 服务端能力：没有 API、数据库、账户系统或上传服务。

@@ -6,7 +6,7 @@ export const BackgroundSelect = ({ type, options, onChange, value }) => {
     const lists = options?.length
         ? options
         : getBackgroundEntries(type).map((item) => ({ key: item.key, value: item }));
-    const isImageCategory = type === 'cosmic' || type === 'desktop';
+    const isImageCategory = type === 'cosmic' || type === 'cloud' || type === 'desktop';
     return (
         <Radio.Group
             onChange={(e) => onChange(e.target.value)}
@@ -28,7 +28,11 @@ export const BackgroundSelect = ({ type, options, onChange, value }) => {
                             <img src={`${item.value.class}&w=48`} alt="" className='w-full h-full object-cover object-center' />
                         </div>
                     ) : (
-                        <div className={cn('w-8 h-8 rounded-full overflow-hidden', item.value.class)} title={item.value.label || item.key}></div>
+                        <div
+                            className={cn('w-8 h-8 rounded-full overflow-hidden', item.value.class)}
+                            style={item.value.previewStyle}
+                            title={item.value.label || item.key}
+                        ></div>
                     )}
                 </Radio>
             ))}

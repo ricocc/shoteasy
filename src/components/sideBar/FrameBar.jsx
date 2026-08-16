@@ -78,7 +78,7 @@ const BrowserFrameSettings = ({ url, headerSize }) => (
             aria-label="浏览器地址栏 URL"
         />
         <div className="shoteasy-browser-frame-settings__slider-heading">
-            <label htmlFor="browser-header-size">顶部尺寸</label>
+            <label htmlFor="browser-header-size" >顶部尺寸</label>
             <output htmlFor="browser-header-size">{headerSize}%</output>
         </div>
         <Slider

@@ -74,12 +74,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/CH563/image-beautifier.git"
+    "url": "https://github.com/ricocc/shoteasy.git"
   },
   "bugs": {
-    "url": "https://github.com/CH563/image-beautifier/issues"
+    "url": "https://github.com/ricocc/shoteasy/issues"
   },
-  "homepage": "https://github.com/CH563/image-beautifier",
-  "author": "Chenliwen",
+  "homepage": "https://shot.ricoui.com",
+  "author": "Rico (https://ricoui.com)",
   "license": "MIT"
 }

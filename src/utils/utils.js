@@ -240,11 +240,13 @@ export const enhanceImageToHdr = async (src) => {
     }
 };
 
-export const numSvg = (num) => {
-    const data = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
+export const numSvg = (num, size = 44) => {
+    const boxSize = Math.max(1, Math.round(Number(size) || 44));
+    const fontSize = Math.max(12, Math.round(boxSize * 19 / 32));
+    const data = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${boxSize} ${boxSize}" width="${boxSize}" height="${boxSize}">
                 <foreignObject width="100%" height="100%">
-                    <div xmlns="http://www.w3.org/1999/xhtml" style="text-align:center;white-space:nowrap;line-height:32px;">
-                        <span style="color:#ffffff;font-size:18px;">${num}</span>
+                    <div xmlns="http://www.w3.org/1999/xhtml" style="text-align:center;white-space:nowrap;line-height:${boxSize}px;">
+                        <span style="color:#ffffff;font-size:${fontSize}px;font-weight:700;font-family:'JetBrains Mono',monospace;">${num}</span>
                     </div>
                 </foreignObject>
             </svg>`;

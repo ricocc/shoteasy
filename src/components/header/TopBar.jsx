@@ -49,6 +49,17 @@ export default observer(function TopBar({ headLeft, headRight }) {
                         onClick={() => stores.history.redo()}
                     />
                 </Tooltip>
+                <Tooltip placement="bottom" arrow={false} title="重置图片样式">
+                    <Button
+                        type="text"
+                        shape="circle"
+                        className="shoteasy-icon-button"
+                        aria-label="重置图片样式"
+                        disabled={!stores.editor.img?.src || stores.option.imageStyleIsDefault}
+                        icon={<Icon.Reload size={16} />}
+                        onClick={() => stores.option.resetImageStyle()}
+                    />
+                </Tooltip>
             </div>
 
             <div className="shoteasy-mobile-actions">

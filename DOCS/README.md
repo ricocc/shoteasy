@@ -1,4 +1,4 @@
-# ShotEasy / Image Beautifier 文档
+# RicoScreenshot / Image Beautifier 文档
 
 本目录记录当前仓库的实际实现。项目是一个运行在浏览器中的截图与图片美化编辑器，也可以构建为 `image-beautifier` React 组件库。它没有后端服务：图片读取、编辑、截屏、复制和导出均在浏览器端完成。
 

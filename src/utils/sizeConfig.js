@@ -4,8 +4,8 @@ const sizeConfig = [
     {
         key: 'default',
         category: 'ratio',
-        title: '常见比例',
-        search: '常见 比例 默认',
+        title: '比例 ',
+        search: '比例 默认',
         lists: [
             { id: 'default-16-9', width: 1920, height: 1080, w: 16, h: 9, search: '横屏 宽屏 16 9' },
             { id: 'default-3-2', width: 1920, height: 1280, w: 3, h: 2, search: '横屏 3 2' },

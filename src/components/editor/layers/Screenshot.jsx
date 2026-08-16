@@ -164,7 +164,7 @@ export default observer(function Screenshot({ parent }) {
             }
             : baseContentSize;
         const metrics = getFrameMetrics(frame, contentSize.width, contentSize.height, { headerSize: browserHeaderSize });
-        const { totalWidth, totalHeight } = metrics;
+        const { totalWidth, totalHeight, headerHeight } = metrics;
         // 平面布局：scale 为二维缩放，rotation（Z 轴）直接作用于 container；
         // 旋转时 origin=center，x/y 是未缩放盒子的左上角（见下方换算）。
         const hasSpatialTransform = rotation !== 0;
@@ -216,9 +216,108 @@ export default observer(function Screenshot({ parent }) {
         image.height = imageHeight + 2;
         image.x = effectivePadding / 2 - 1;
         image.y = (metrics.boxHeight - imageHeight) / 2 - 1;
+
+        // Leafer 的编辑器会先改变 screenshot-box 的外层尺寸，React effect
+        // 则要等状态写回后才会重算子节点。拖动期间直接同步子节点，避免
+        // 浏览器外框/图片暂时保持旧尺寸而出现裁剪闪烁。
+        const previewResize = (targetNode, start) => {
+            if (!targetNode || !start || !Number.isFinite(targetNode.width) || !Number.isFinite(targetNode.height)) return;
+            const startWidth = Math.max(1, Number(start.width) || totalWidth);
+            const startHeight = Math.max(1, Number(start.height) || totalHeight);
+            const startScaleX = Number(start.scaleX) || 1;
+            const startScaleY = Number(start.scaleY) || 1;
+            const currentScaleX = Number(targetNode.scaleX) || 1;
+            const currentScaleY = Number(targetNode.scaleY) || 1;
+            const visualRatioX = (targetNode.width / startWidth) * (currentScaleX / startScaleX);
+            if (!Number.isFinite(visualRatioX) || visualRatioX <= 0) return;
+            const currentVisualRatioY = (targetNode.height / startHeight) * (currentScaleY / startScaleY);
+            if (Math.abs(visualRatioX - 1) < 0.0001 && Math.abs(currentVisualRatioY - 1) < 0.0001) return;
+
+            const independentHeader = hasIndependentBrowserHeader;
+            // 浏览器顶部栏的高度不能参与图片缩放；固定 Y 轴缩放，
+            // 仅用 X 轴比例推导网页内容高度，释放时可与最终布局精确衔接。
+            if (independentHeader) targetNode.scaleY = startScaleY;
+            const liveScaleY = Number(targetNode.scaleY) || 1;
+            const desiredVisualHeight = independentHeader
+                ? (headerHeight * startScaleY) + (metrics.height * startScaleY * visualRatioX)
+                : startHeight * startScaleY * visualRatioX;
+            const desiredHeight = Math.max(1, desiredVisualHeight / liveScaleY);
+            const topEdgeActive = Math.abs((targetNode.y ?? start.y) - start.y) > 0.5;
+            const startBottom = start.y + startHeight;
+            targetNode.height = desiredHeight;
+            if (topEdgeActive) targetNode.y = startBottom - desiredHeight;
+
+            const localRatioX = targetNode.width / startWidth;
+            const localRatioY = desiredHeight / Math.max(1, totalHeight);
+            const bodyRatio = independentHeader
+                ? Math.max(0.01, (desiredHeight - headerHeight) / Math.max(1, metrics.height))
+                : localRatioY;
+
+            decorationEntries.forEach((entry) => {
+                const decoration = entry.node;
+                decoration.scaleX = 1;
+                decoration.scaleY = 1;
+                decoration.x = entry.x * localRatioX;
+                decoration.width = Math.max(0.001, entry.width * localRatioX);
+                if (independentHeader) {
+                    decoration.y = entry.y;
+                    decoration.height = entry.height;
+                } else {
+                    decoration.y = entry.y * localRatioY;
+                    decoration.height = Math.max(0.001, entry.height * localRatioY);
+                }
+            });
+
+            box.x = metrics.boxX * localRatioX;
+            box.y = independentHeader ? metrics.boxY : metrics.boxY * localRatioY;
+            box.width = Math.max(1, metrics.boxWidth * localRatioX);
+            box.height = Math.max(1, metrics.boxHeight * bodyRatio);
+            const livePadding = independentHeader ? effectivePadding * visualRatioX : padding;
+            const liveImageWidth = Math.max(1, box.width - livePadding);
+            const liveImageHeight = Math.max(1, Math.round(liveImageWidth * box.height / Math.max(1, box.width)));
+            image.width = liveImageWidth + 2;
+            image.height = liveImageHeight + 2;
+            image.x = livePadding / 2 - 1;
+            image.y = (box.height - liveImageHeight) / 2 - 1;
+        };
+        const decorationEntries = decorations.map((node) => ({
+            node,
+            x: node.x || 0,
+            y: node.y || 0,
+            width: node.width || 0,
+            height: node.height || 0,
+        }));
+        const resolveBasePosition = (nextScale = scale, nextRotation = rotation) => {
+            const safeScale = Math.max(0.1, Math.min(3, Number(nextScale) || scale));
+            const nextContentSize = hasIndependentBrowserHeader
+                ? {
+                    width: Math.max(1, baseContentSize.width * safeScale),
+                    height: Math.max(1, baseContentSize.height * safeScale),
+                }
+                : baseContentSize;
+            const nextMetrics = getFrameMetrics(frame, nextContentSize.width, nextContentSize.height, { headerSize: browserHeaderSize });
+            const nextWidth = nextMetrics.totalWidth;
+            const nextHeight = nextMetrics.totalHeight;
+            if (nextRotation !== 0) {
+                const rad = nextRotation * Math.PI / 180;
+                const rotatedW = Math.abs(nextWidth * Math.cos(rad)) + Math.abs(nextHeight * Math.sin(rad));
+                const rotatedH = Math.abs(nextWidth * Math.sin(rad)) + Math.abs(nextHeight * Math.cos(rad));
+                let { x, y } = getRotatedPosition(align, rotatedW, rotatedH, frameConf.width, frameConf.height);
+                x -= nextWidth / 2;
+                y -= nextHeight / 2;
+                return { x, y };
+            }
+            return getPosition(align, frameConf.width - nextWidth, frameConf.height - nextHeight);
+        };
+        container.__shoteasyResizePreview = previewResize;
+        container.__shoteasyResizeScaleMode = hasIndependentBrowserHeader ? 'width' : 'average';
+        container.__shoteasyResolveBasePosition = resolveBasePosition;
         createSnap();
 
         return () => {
+            if (container.__shoteasyResizePreview === previewResize) delete container.__shoteasyResizePreview;
+            delete container.__shoteasyResizeScaleMode;
+            delete container.__shoteasyResolveBasePosition;
             decorations.forEach((node) => node.remove?.());
             container.strokeWidth = null;
             container.stroke = null;

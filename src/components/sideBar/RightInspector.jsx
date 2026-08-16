@@ -4,7 +4,7 @@ import Icon from '@components/Icon';
 import { Button, Slider, Radio, Segmented, InputNumber, Switch } from 'antd';
 import ColorPicker from '@components/ColorPicker';
 import stores from '@stores';
-import backgroundConfig from '@utils/backgroundConfig';
+import backgroundConfig, { getBackgroundDefinition, QUICK_IMAGE_KEYS } from '@utils/backgroundConfig';
 import { cn } from '@utils/utils';
 import { isDeviceFrame } from '@utils/frameConfig';
 import CropperImage from './CropperImage';
@@ -13,6 +13,12 @@ import Watermark from './Watermark';
 import DrawerBar from './DrawerBar';
 import TextProperties from './TextProperties';
 import EffectProperties from './EffectProperties';
+import { BackgroundSelect } from './BackgroundSelect';
+
+/** 预设区直出的图片背景选项（精选 10 张，见 backgroundConfig.QUICK_IMAGE_KEYS）。 */
+const quickImageOptions = QUICK_IMAGE_KEYS
+    .map((key) => ({ key, value: getBackgroundDefinition(key) }))
+    .filter((item) => item.value);
 
 /** 可折叠分组。 */
 function Section({ title, defaultOpen = true, children }) {
@@ -100,6 +106,12 @@ function ShadowField({ label, value, min, max, onChange }) {
 export const InspectorContent = observer(() => {
     const [showMore, setShowMore] = useState(false);
     const onBgChange = (e) => stores.option.setBackground(e.target.value);
+    // 图片背景与抽屉一致：走 applyBackground（内置图先下载 Blob 再应用，导出不被 CORS 污染）
+    const onBgImageChange = (key) => {
+        stores.option.applyBackground(key).catch(() => {
+            stores.editor.message?.error?.('背景图片加载失败，请重试');
+        });
+    };
     const deviceFrame = isDeviceFrame(stores.option.frame);
     return (
         <div className="shoteasy-inspector relative h-full flex flex-col">
@@ -139,17 +151,27 @@ export const InspectorContent = observer(() => {
                                 <div className={cn("w-8 h-8 rounded-full", backgroundConfig.none.class)} title="无背景"></div>
                             </Radio>
                             <Radio className="[&_.ant-radio]:hidden [&_span]:p-0 mr-0" value='default_1'>
-                                <div className={cn("w-8 h-8 rounded-full", backgroundConfig.default_1.class)}></div>
+                                <div className={cn("w-8 h-8 rounded-full", backgroundConfig.default_1.class)} style={backgroundConfig.default_1.previewStyle}></div>
                             </Radio>
                             {Object.keys(backgroundConfig).map((key) => {
                                 if (key.includes('default') && key !== 'default_1') return (
                                     <Radio key={key} className="[&_.ant-radio]:hidden [&_span]:p-0 mr-0" value={key}>
-                                        <div className={cn("w-8 h-8 rounded-full", backgroundConfig[key].class)}></div>
+                                        <div className={cn("w-8 h-8 rounded-full", backgroundConfig[key].class)} style={backgroundConfig[key].previewStyle}></div>
                                     </Radio>
                                 );
                                 return null;
                             })}
                         </Radio.Group>
+                        {/* 图片背景快选：精选 10 张直出，免开抽屉；选中走 applyBackground 异步下载，保证导出干净 */}
+                        <div className="pt-3">
+                            <label className="block pb-1.5">图片</label>
+                            <BackgroundSelect
+                                type="cloud"
+                                options={quickImageOptions}
+                                onChange={onBgImageChange}
+                                value={stores.option.background}
+                            />
+                        </div>
                     </div>
                 </Section>
 

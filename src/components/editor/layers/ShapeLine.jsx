@@ -8,6 +8,37 @@ import baseSnapshot from '@stores/baseSnapshot';
 import stores from '@stores';
 import { blurSnapshot, mosaicSnapshot, buildSpotlightPath } from '@utils/shape/regionEffect';
 
+const STEP_SIZE = 44;
+const STEP_RADIUS = 16.5;
+const STEP_STROKE_WIDTH = 2.5;
+const STEP_SHADOW = { x: 0, y: 2, blur: 8, color: '#00000040', box: true };
+
+const getStepScaleRatio = (width, height) => {
+    const currentWidth = Math.max(1, Math.abs(Number(width) || STEP_SIZE));
+    const currentHeight = Math.max(1, Math.abs(Number(height) || STEP_SIZE));
+    return Math.max(0.05, Math.min(currentWidth, currentHeight) / STEP_SIZE);
+};
+
+const getStepCornerRadius = (width, height) => {
+    const ratio = getStepScaleRatio(width, height);
+    const shortestSide = STEP_SIZE * ratio;
+    return Math.min(shortestSide / 2, shortestSide * (STEP_RADIUS / STEP_SIZE));
+};
+
+const getStepStrokeWidth = (width, height, baseStrokeWidth) => {
+    const stroke = Math.abs(Number(baseStrokeWidth) || STEP_STROKE_WIDTH);
+    return Math.max(0.5, stroke * getStepScaleRatio(width, height));
+};
+
+const getStepShadow = (width, height) => {
+    const ratio = getStepScaleRatio(width, height);
+    return {
+        ...STEP_SHADOW,
+        y: STEP_SHADOW.y * ratio,
+        blur: STEP_SHADOW.blur * ratio,
+    };
+};
+
 export default function ShapeLine({ parent, type, id, width, height, x, y, fill, strokeWidth, zIndex, points, editable, text, textStyle, snap, effect, rotation = 0, scaleX = 1, scaleY = 1 }) {
     const shape = useMemo(() => {
         const defaultOption = { id, x, y, zIndex }
@@ -77,21 +108,19 @@ export default function ShapeLine({ parent, type, id, width, height, x, y, fill,
             });
         }
         if (type === 'Step') {
-            return new Ellipse({
+            // 步骤序号徽标：连续圆角方形（squircle）+ 白描边 + 柔和投影，
+            // 数字由 numSvg 以白色粗体叠加在填充色上。
+            return new Rect({
                 ...defaultOption,
-                width: 32,
-                height: 32,
-                stroke: '#ffffff90',
-                strokeWidth,
+                width: STEP_SIZE,
+                height: STEP_SIZE,
+                cornerRadius: STEP_RADIUS,
+                cornerSmoothing: 0.6,
+                stroke: '#ffffff',
+                strokeWidth: getStepStrokeWidth(STEP_SIZE, STEP_SIZE, strokeWidth),
                 strokeAlign: 'outside',
                 lockRatio: true,
-                shadow: {
-                    x: 1,
-                    y: 1,
-                    blur: 2,
-                    color: '#00000045',
-                    box: true
-                },
+                shadow: getStepShadow(STEP_SIZE, STEP_SIZE),
                 fill: [
                     {
                         type: 'solid',
@@ -99,7 +128,7 @@ export default function ShapeLine({ parent, type, id, width, height, x, y, fill,
                     },
                     {
                         type: 'image',
-                        url: numSvg(text),
+                        url: numSvg(text, STEP_SIZE),
                         format: 'svg',
                         align: 'center'
                     }
@@ -179,7 +208,7 @@ export default function ShapeLine({ parent, type, id, width, height, x, y, fill,
             shape.x = x;
             shape.y = y;
         } else if (type === 'Step' || type === 'text') {
-            // Step 固定 32×32；text 宽高由内容自适应。两者只应用位移，不强制尺寸。
+            // Step 以 44×44 为基础尺寸，编辑器缩放时保留节点变换；text 宽高由内容自适应。
             shape.x = x;
             shape.y = y;
         } else {
@@ -193,6 +222,25 @@ export default function ShapeLine({ parent, type, id, width, height, x, y, fill,
         shape.scaleX = scaleX;
         shape.scaleY = scaleY;
     }, [x, y, width, height, rotation, scaleX, scaleY, points]);
+
+    useEffect(() => {
+        if (type !== 'Step') return undefined;
+
+        const syncStepStyle = () => {
+            const nextRadius = getStepCornerRadius(shape.width, shape.height);
+            const nextStrokeWidth = getStepStrokeWidth(shape.width, shape.height, strokeWidth);
+            if (shape.cornerRadius !== nextRadius) shape.cornerRadius = nextRadius;
+            if (shape.strokeWidth !== nextStrokeWidth) shape.strokeWidth = nextStrokeWidth;
+            shape.shadow = getStepShadow(shape.width, shape.height);
+        };
+
+        syncStepStyle();
+        const onChange = (event) => {
+            if (event?.attrName === 'width' || event?.attrName === 'height') syncStepStyle();
+        };
+        shape.on(PropertyEvent.CHANGE, onChange);
+        return () => shape.off(PropertyEvent.CHANGE, onChange);
+    }, [shape, type, strokeWidth]);
 
     // 聚光遮罩（M5.11）：overlay = children[0]（even-odd 全画布外环 + 开口镂空），
     // hitRect = children[1]（开口命中区）。遮罩 fill=overlayColor+opacity，覆盖整张画布、
@@ -235,7 +283,8 @@ export default function ShapeLine({ parent, type, id, width, height, x, y, fill,
     }, [fill]);
 
     useEffect(() => {
-        if (['Circle', 'Magnifier', 'Slash', 'MoveDownLeft', 'Pencil', 'Step', 'Square'].includes(type)) shape.strokeWidth = strokeWidth;
+        if (type === 'Step') shape.strokeWidth = getStepStrokeWidth(shape.width, shape.height, strokeWidth);
+        else if (['Circle', 'Magnifier', 'Slash', 'MoveDownLeft', 'Pencil', 'Square'].includes(type)) shape.strokeWidth = strokeWidth;
     }, [strokeWidth]);
 
     useEffect(() => {

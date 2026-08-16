@@ -23,6 +23,7 @@ import ArrowsAllDirectionIcon from 'mage-icons-react/stroke/ArrowsAllDirectionIc
 import EditPenIcon from 'mage-icons-react/stroke/EditPenIcon';
 import RefreshReverseIcon from 'mage-icons-react/stroke/RefreshReverseIcon';
 import RefreshIcon from 'mage-icons-react/stroke/RefreshIcon';
+import ReloadIcon from 'mage-icons-react/stroke/ReloadIcon';
 import ChevronRightIcon from 'mage-icons-react/stroke/ChevronRightIcon';
 import ChevronDownIcon from 'mage-icons-react/stroke/ChevronDownIcon';
 import ChevronUpIcon from 'mage-icons-react/stroke/ChevronUpIcon';
@@ -203,6 +204,7 @@ export default {
     Smile: wrap(SmileGlyph),
     Undo: wrap(RefreshReverseIcon),
     Redo: wrap(RefreshIcon),
+    Reload: wrap(ReloadIcon),
     ChevronRight: wrap(ChevronRightIcon),
     ChevronDown: wrap(ChevronDownIcon),
     ChevronUp: wrap(ChevronUpIcon),

@@ -20,7 +20,7 @@ class Editor {
     app = null;
     scale = 100;
     useTool = null;
-    annotateColor = '#ff0000';
+    annotateColor = '#2563eb';
     strokeWidth = 4;
     shapes = new Map();
     message = null;

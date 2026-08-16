@@ -46,7 +46,7 @@
   image: {
     assetId: 'asset-id',
     sourceType: 'blob' | 'data-url' | 'remote-url',
-    name: 'ShotEasy.png',
+    name: 'RicoScreenshot.png',
     mimeType: 'image/png',
     width: 1920,
     height: 1080
@@ -65,6 +65,7 @@
       fill: null,
       mode: 'cover' | 'fit' | 'stretch',
       align: 'center',
+      gradientAngle: 90,
       blur: 0,
       overlayColor: '#000000',
       overlayOpacity: 0,
@@ -74,6 +75,8 @@
   screenshot: {
     scale: 1,
     rotation: 0,
+    offsetX: 0,
+    offsetY: 0,
     flipX: false,
     flipY: false,
     align: 'center',
@@ -83,11 +86,13 @@
     shadow: 3,
     frame: 'none',
     frameMode: 'cover',
+    browserUrl: 'shoteasy.app',
+    browserHeaderSize: 100,
     hdrEnabled: false
   },
   watermark: {
     enabled: false,
-    text: 'ShotEasy',
+    text: 'RicoScreenshot',
     color: '#00000030',
     direction: 45,
     onlyBackground: false
@@ -156,7 +161,7 @@ V1 不提供图层 UI，但保留 `zIndex` 和 `visible`，供现有渲染、历
 - 保存 canvas、screenshot 和 watermark 配置。
 - 保留现有 setter，内部映射到新字段，避免 UI 一次性重写导致回归。
 - 提供 `toDocument()` 和 `restoreFromDocument()`。
-- 提供 `applyLayoutPreset(id)`，一次性更新相关字段。
+- 提供截图位置偏移与 Z 轴旋转的 setter，并在交互结束时提交一个历史快照。
 
 ### UI 状态
 
@@ -199,7 +204,7 @@ React 图层组件继续通过 effect 创建 LeaferJS 节点，并订阅 store �
 - 标注颜色、线宽、文字或效果属性修改。
 - 尺寸、背景、图片样式、外框、水印、HDR 修改。
 - 裁剪结果。
-- 应用布局预设。
+- 主截图自由移动、旋转以及删除。
 
 ### 不进入历史的操作
 
@@ -214,38 +219,27 @@ React 图层组件继续通过 effect 创建 LeaferJS 节点，并订阅 store �
 - Ant Design Slider 使用完成事件提交历史；连续 `onChange` 只更新预览。
 - 颜色选择连续变化在 300ms 无新变化后提交一次。
 - 文本输入在失焦、确认或 500ms 无输入后提交一次。
-- 一次布局预设应用只提交一个快照。
+- 主截图拖动或旋转只在完成事件提交历史；连续 pointer move 只更新画布预览。
 
 历史恢复完成后，应取消无效选择，重新应用 document 到 store，再由现有 effect 更新画布；不得直接反向序列化 LeaferJS 整棵树。
 
-## 布局预设技术约束
+## 主截图直接操作
 
-新增 `rotation` 为 screenshot 选项。旋转后的定位和边界使用现有 `calculateRotatedRectDimensions()` 计算，确保预设不会无意裁切主体。
+主截图节点使用 `screenshot-box` 作为唯一可编辑目标。点击后显示蓝色选中边框、顶部中心旋转控制点和右侧关闭按钮；四角控制点可拖拽缩放，边中点不启用。浏览器/Arc 外框不再对整个容器施加统一缩放：`scale` 折算进网页内容尺寸和外框宽度，标题栏高度继续由 `browserHeaderSize` 独立计算，因此角点缩放不会改变圆点、工具图标和 URL 字号。截图主体使用 `grab`/`grabbing` 光标，拖动只记录相对于九宫格基准位置的 `offsetX`、`offsetY`，重新点击九宫格时清零偏移。
 
-布局预设配置只包含：
+旋转控制点和右侧旋转滑杆共用 `option.rotation`，旋转始终以截图整体中心为中心。截图、浏览器/设备外框、圆角和阴影由同一 LeaferJS 容器变换，编辑器预览与 PNG/JPG/WebP 导出保持一致；背景和独立标注不随主图移动。拖动、缩放与旋转过程直接更新节点，截图内容盒和外框装饰在每个动画帧同步尺寸，避免先裁剪再回填的闪烁；释放时才写入 option 并提交一条历史记录。
 
-```js
-{
-  id,
-  title,
-  scale,
-  rotation,
-  align,
-  padding,
-  shadow,
-  frame
-}
-```
-
-预设不得包含背景、HDR、水印、图片资源或 shapes。
+关闭按钮复用现有清理流程，移除当前图片和标注但保留背景、尺寸、外框等配置。旧草稿缺少 `offsetX`、`offsetY` 时按 `0` 恢复，不提升 schema 版本。
 
 ## 外框实现
 
 - 继续由 `Screenshot` 图层组合 `container`、`box`、`image` 和装饰节点。
 - 外框配置从组件内 switch 常量逐步提取为配置与小型创建函数。
+- 基础外框按实际结构分为无外框、浅/深描边、白色卡片和浅/深玻璃；Stack、Stack 2、Polaroid 单列为创意外框。缩略图与画布共用同一语义，卡片和玻璃衬底必须覆盖外层布局盒，不能只画在图片下方而被内容完全遮住。
 - Card、Stack、Stack 2 和 Polaroid 使用 Leafer Rect 组成。
 - Glass Light/Dark 使用半透明填充、描边和阴影；不依赖 CSS backdrop-filter，保证导出一致。
-- Arc 风格只绘制通用标题栏和控件占位，不使用第三方品牌资源。
+- Safari/Chrome 明暗样式与 Arc 简洁样式使用 Leafer Rect/Text 绘制标题栏、标签/地址栏、通用控件和 URL，不使用第三方品牌素材；旧 `macosBar*` / `windowsBar*` ID 继续兼容已有项目。
+- `browserHeaderSize` 为 50–200 的整数百分比，默认 100；100% 使用放大后的浏览器基准高度（Safari 54px、Chrome 86px、Arc 56px），参与标题栏高度、内容可用高度和最终布局计算。`browserUrl` 最多 160 字符，只渲染文字，不执行网络请求。
 - 切换外框时必须清理前一个外框创建的所有节点和临时样式。
 
 ## 背景渲染
@@ -365,3 +359,5 @@ import 'image-beautifier/lib/style.css';
 - 不复制其整体组件、store 或导出管线。
 - 若某个独立算法必须复用，提交中记录原仓库 URL、文件路径、commit 和修改说明，并按 Apache-2.0 要求维护声明。
 - 不复制参考站品牌名、Logo、设备素材或缩略图。
+- 渐变色卡下方的 `gradientAngle` 滑杆范围为 0–360°；拖动时只更新预览，松开后提交一条历史记录并随草稿/导出保存。
+- 左上角撤销/重做按钮右侧提供“重置图片样式”，一次恢复缩放、翻转、内边距、圆角和阴影默认值，不改变背景、浏览器外框或画布尺寸。

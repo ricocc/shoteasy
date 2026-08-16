@@ -62,16 +62,13 @@ export default observer(function DrawerBar({ showMore, onChange }) {
                     >返回</Button>
                 </div>
                 <div className="h-0 flex-1 overflow-y-auto px-4 py-2">
-                    <h4 className="text-sm font-bold py-2">自定义</h4>
-                    <div className="py-1">
-                        <ColorPicker onChange={handleCustom}>
-                        <Button type="default" size="small" shape="circle" aria-label="自定义背景颜色" icon={<img src={colorSvg} width={18} alt="" />} />
-                        </ColorPicker>
+                    <h4 className="text-sm font-bold py-2">上传图片</h4>
+                    <div className="pb-1">
+                        <label className="inline-flex cursor-pointer items-center rounded-md border border-slate-300 px-2 py-1 text-xs">
+                            选择本地图片
+                            <input type="file" accept="image/*" className="sr-only" onChange={handleUpload} />
+                        </label>
                     </div>
-                    <label className="inline-flex cursor-pointer items-center rounded-md border border-slate-300 px-2 py-1 text-xs">
-                        上传本地图片
-                        <input type="file" accept="image/*" className="sr-only" onChange={handleUpload} />
-                    </label>
                     {isImageBackground && (
                         <div className="border-y border-slate-200/70 py-2">
                             <h4 className="text-sm font-bold py-2">图片背景</h4>
@@ -125,11 +122,37 @@ export default observer(function DrawerBar({ showMore, onChange }) {
                     <h4 className="text-sm font-bold py-2">无背景</h4>
                     <BackgroundSelect type="none" onChange={onSelectChange} value={stores.option.background} />
                     <h4 className="text-sm font-bold py-2">纯色</h4>
+                    <div className="flex items-center justify-between py-1">
+                        <span className="text-xs text-gray-500">自定义颜色</span>
+                        <ColorPicker onChange={handleCustom}>
+                            <Button type="default" size="small" shape="circle" aria-label="自定义纯色背景" icon={<img src={colorSvg} width={18} alt="" />} />
+                        </ColorPicker>
+                    </div>
                     <BackgroundSelect type="solid" onChange={onSelectChange} value={stores.option.background} />
                     <h4 className="text-sm font-bold py-2">渐变</h4>
                     <BackgroundSelect type="gradient" onChange={onSelectChange} value={stores.option.background} />
+                    {backgroundDefinition?.type === 'gradient' && (
+                        <div className="pb-3 pt-2">
+                            <div className="flex items-center justify-between text-xs">
+                                <label htmlFor="background-gradient-angle">渐变角度</label>
+                                <span className="text-gray-500">{stores.option.backgroundGradientAngle}°</span>
+                            </div>
+                            <Slider
+                                id="background-gradient-angle"
+                                min={0}
+                                max={360}
+                                step={1}
+                                value={stores.option.backgroundGradientAngle}
+                                onChange={(value) => stores.option.setBackgroundGradientAngle(value, { commit: false })}
+                                onChangeComplete={(value) => stores.option.setBackgroundGradientAngle(value)}
+                                aria-label="渐变角度"
+                            />
+                        </div>
+                    )}
                     <h4 className="text-sm font-bold py-2">宇宙渐变</h4>
                     <BackgroundSelect type="cosmic" onChange={onSelectChange} value={stores.option.background} />
+                    <h4 className="text-sm font-bold py-2">天空白云</h4>
+                    <BackgroundSelect type="cloud" onChange={onSelectChange} value={stores.option.background} />
                     <h4 className="text-sm font-bold py-2">桌面</h4>
                     <BackgroundSelect type="desktop" onChange={onSelectChange} value={stores.option.background} />
                 </div>

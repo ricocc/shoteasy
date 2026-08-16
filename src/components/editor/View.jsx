@@ -111,6 +111,8 @@ export default observer(function View({ target }) {
         closeButton.on(PointerEvent.TAP, clearCurrentImage);
 
         let screenshotDragStart = null;
+        let screenshotResizeFrame = 0;
+        let screenshotResizeNode = null;
         const isScreenshotSelected = () => app.editor.list.length === 1 && app.editor.list[0]?.id === SCREENSHOT_NODE_ID;
         const startScreenshotTransform = () => {
             if (!isScreenshotSelected()) return;
@@ -135,15 +137,27 @@ export default observer(function View({ target }) {
                 return;
             }
             const node = app.editor.list[0];
-            const nextOffsetX = screenshotDragStart.offsetX + (node.x - screenshotDragStart.x);
-            const nextOffsetY = screenshotDragStart.offsetY + (node.y - screenshotDragStart.y);
+            node.__shoteasyResizePreview?.(node, screenshotDragStart);
+            if (screenshotResizeFrame) cancelAnimationFrame(screenshotResizeFrame);
+            screenshotResizeFrame = 0;
+            screenshotResizeNode = null;
             const nextRotation = node.rotation ?? screenshotDragStart.rotation;
             const scaleRatioX = (node.width / screenshotDragStart.width) * (node.scaleX / screenshotDragStart.scaleX);
             const scaleRatioY = (node.height / screenshotDragStart.height) * (node.scaleY / screenshotDragStart.scaleY);
-            const nextScale = screenshotDragStart.scale * ((
-                (Number.isFinite(scaleRatioX) ? scaleRatioX : 1)
-                + (Number.isFinite(scaleRatioY) ? scaleRatioY : 1)
-            ) / 2);
+            const safeScaleRatioX = Number.isFinite(scaleRatioX) ? scaleRatioX : 1;
+            const safeScaleRatioY = Number.isFinite(scaleRatioY) ? scaleRatioY : 1;
+            // 浏览器顶部栏独立于内容缩放，最终比例必须以内容宽度为准；
+            // 否则 Leafer 在 pointerup 阶段对总高度做的最后一次修正会造成跳变。
+            const nextScale = screenshotDragStart.scale * (node.__shoteasyResizeScaleMode === 'width'
+                ? safeScaleRatioX
+                : (safeScaleRatioX + safeScaleRatioY) / 2);
+            const basePosition = node.__shoteasyResolveBasePosition?.(nextScale, nextRotation);
+            const nextOffsetX = basePosition
+                ? node.x - basePosition.x
+                : screenshotDragStart.offsetX + (node.x - screenshotDragStart.x);
+            const nextOffsetY = basePosition
+                ? node.y - basePosition.y
+                : screenshotDragStart.offsetY + (node.y - screenshotDragStart.y);
             const changed = Math.abs(nextOffsetX - screenshotDragStart.offsetX) > 0.01
                 || Math.abs(nextOffsetY - screenshotDragStart.offsetY) > 0.01
                 || Math.abs(nextRotation - screenshotDragStart.rotation) > 0.01
@@ -162,7 +176,19 @@ export default observer(function View({ target }) {
             scheduleScreenshotControlsSync();
         };
 
+        const previewScreenshotResize = () => {
+            if (!screenshotDragStart || !isScreenshotSelected()) return;
+            screenshotResizeNode = app.editor.list[0];
+            if (screenshotResizeFrame) return;
+            screenshotResizeFrame = requestAnimationFrame(() => {
+                screenshotResizeFrame = 0;
+                if (!screenshotDragStart || !screenshotResizeNode || !isScreenshotSelected()) return;
+                screenshotResizeNode.__shoteasyResizePreview?.(screenshotResizeNode, screenshotDragStart);
+            });
+        };
+
         app.on(DragEvent.START, startScreenshotTransform);
+        app.on(DragEvent.DRAG, previewScreenshotResize);
         app.on(DragEvent.END, finishScreenshotTransform);
 
         app.tree.on(ZoomEvent.ZOOM, () => {
@@ -372,6 +398,8 @@ export default observer(function View({ target }) {
             removeListener(target, onResize);
             clearTimeout(closeSyncTimer);
             clearTimeout(clearImageTimer);
+            if (screenshotResizeFrame) cancelAnimationFrame(screenshotResizeFrame);
+            app.off(DragEvent.DRAG, previewScreenshotResize);
             if (selectedTarget) selectedTarget.off(PropertyEvent.CHANGE, syncScreenshotControls);
             closeButton.remove();
             stores.editor.scheduleDestroy();

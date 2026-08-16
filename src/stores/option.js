@@ -8,6 +8,53 @@ const DEVICE_FRAMES = ['macbookpro16', 'macbookair', 'imacpro', 'ipadpro', 'ipho
 const BACKGROUND_MODES = ['cover', 'fit', 'stretch'];
 const BACKGROUND_ALIGNS = ['top-left', 'top', 'top-right', 'left', 'center', 'right', 'bottom-left', 'bottom', 'bottom-right'];
 const isImageBackground = (definition) => definition?.type === 'builtin-image' || definition?.type === 'upload-image';
+const DEFAULT_GRADIENT_ANGLE = 90;
+
+const clampGradientAngle = (value, fallback = DEFAULT_GRADIENT_ANGLE) => {
+    const angle = Number(value);
+    return Number.isFinite(angle)
+        ? Math.max(0, Math.min(360, Math.round(angle)))
+        : fallback;
+};
+
+const getGradientPresetAngle = (definition, fallback = DEFAULT_GRADIENT_ANGLE) => {
+    if (definition?.type !== 'gradient') return fallback;
+    return clampGradientAngle(
+        definition.gradientAngle ?? (definition.fill?.from === 'top-left' ? 135 : DEFAULT_GRADIENT_ANGLE),
+        fallback
+    );
+};
+
+const getGradientPoints = (angle, width, height) => {
+    const safeWidth = Math.max(1, Number(width) || 1);
+    const safeHeight = Math.max(1, Number(height) || 1);
+    // 0° 指向上方、90° 指向右方，与 CSS linear-gradient 的角度约定一致。
+    const radians = clampGradientAngle(angle) * Math.PI / 180;
+    const directionX = Math.sin(radians);
+    const directionY = -Math.cos(radians);
+    const extent = Math.sqrt(safeWidth ** 2 + safeHeight ** 2) / 2;
+    const centerX = safeWidth / 2;
+    const centerY = safeHeight / 2;
+    const fromX = (centerX - directionX * extent) / safeWidth;
+    const fromY = (centerY - directionY * extent) / safeHeight;
+    const toX = (centerX + directionX * extent) / safeWidth;
+    const toY = (centerY + directionY * extent) / safeHeight;
+    return {
+        from: { x: fromX, y: fromY, type: 'percent' },
+        to: { x: toX, y: toY, type: 'percent' },
+    };
+};
+
+const applyGradientAngle = (fill, angle, width, height) => {
+    if (fill?.type === 'angular') {
+        return { ...fill, rotation: clampGradientAngle(angle) };
+    }
+    if (fill?.type !== 'linear') return fill;
+    return {
+        ...fill,
+        ...getGradientPoints(angle, width, height),
+    };
+};
 
 // 远程背景下载的取消控制器（模块级、非 observable，避免被 MobX 追踪）。
 // 每次 _fetchImageBackground 创建新控制器并 abort 上一个，防止旧请求覆盖新选择（M4.14）。
@@ -33,6 +80,8 @@ class Option {
     backgroundAssetId = null;
     backgroundMode = 'cover';
     backgroundAlign = 'center';
+    // 旧预设 default_* 为从左到右，90° 可保持旧草稿的视觉方向。
+    backgroundGradientAngle = DEFAULT_GRADIENT_ANGLE;
     backgroundLoading = false;
     // 背景轻量效果（M4.11/M4.12/M4.13），默认关闭
     backgroundBlur = 0;
@@ -54,7 +103,7 @@ class Option {
             type: 'linear',
             from: 'left',
             to: 'right',
-            stops: ['#6366f1', '#a855f7', '#ec4899']
+            stops: ['#f5f7fa', '#c3cfe2', '#e0c3fc', '#8ec5fc']
         }
     }
     constructor() {
@@ -131,6 +180,7 @@ class Option {
         if (!Number.isFinite(nextWidth) || !Number.isFinite(nextHeight) || nextWidth <= 0 || nextHeight <= 0) return;
         this.frameConf.width = Math.round(nextWidth);
         this.frameConf.height = Math.round(nextHeight);
+        this._syncGradientBackgroundFill();
     }
 
     setAlign(value) {
@@ -178,6 +228,9 @@ class Option {
         this.releaseBackgroundAsset();
         this.background = key;
         this.backgroundAssetId = null;
+        if (definition.type === 'gradient') {
+            this.backgroundGradientAngle = getGradientPresetAngle(definition, this.backgroundGradientAngle);
+        }
         this.frameConf.background = this.getBackgroundFill(definition);
         history.commit();
         return true;
@@ -285,6 +338,14 @@ class Option {
         history.commit('slider:bgnoise');
         return true;
     }
+
+    setBackgroundGradientAngle(value, { commit = true } = {}) {
+        if (getBackgroundDefinition(this.background)?.type !== 'gradient') return false;
+        this.backgroundGradientAngle = clampGradientAngle(value, this.backgroundGradientAngle);
+        this._syncGradientBackgroundFill();
+        if (commit) history.commit('slider:bg-gradient-angle');
+        return true;
+    }
     setUploadedBackground(asset) {
         if (!asset?.id || !asset.url) return false;
         this.releaseBackgroundAsset();
@@ -309,12 +370,63 @@ class Option {
         return true;
     }
     getBackgroundFill(definition) {
-        if (!definition?.fill || !isImageBackground(definition)) return definition?.fill ?? null;
-        return {
-            ...definition.fill,
-            mode: this.backgroundMode,
-            align: this.backgroundAlign,
-        };
+        if (!definition?.fill) return null;
+        if (isImageBackground(definition)) {
+            return {
+                ...definition.fill,
+                mode: this.backgroundMode,
+                align: this.backgroundAlign,
+            };
+        }
+        if (definition.type === 'gradient') {
+            return applyGradientAngle(
+                definition.fill,
+                this.backgroundGradientAngle,
+                this.frameConf.width,
+                this.frameConf.height
+            );
+        }
+        return definition.fill;
+    }
+
+    _syncGradientBackgroundFill() {
+        if (!['linear', 'angular'].includes(this.frameConf.background?.type)) return;
+        this.frameConf.background = applyGradientAngle(
+            this.frameConf.background,
+            this.backgroundGradientAngle,
+            this.frameConf.width,
+            this.frameConf.height
+        );
+    }
+
+    get imageStyleIsDefault() {
+        const defaultShadow = shadowFromIntensity(3);
+        const shadow = normalizeShadow(this.shadow);
+        return this.scale === 1
+            && this.scaleX === false
+            && this.scaleY === false
+            && this.padding === 0
+            && this.paddingBg === 'rgba(255,255,255, 100)'
+            && this.round === 10
+            && shadow.visible === defaultShadow.visible
+            && shadow.x === defaultShadow.x
+            && shadow.y === defaultShadow.y
+            && shadow.blur === defaultShadow.blur
+            && shadow.spread === defaultShadow.spread
+            && shadow.color === defaultShadow.color;
+    }
+
+    resetImageStyle() {
+        if (this.imageStyleIsDefault) return false;
+        this.scale = 1;
+        this.scaleX = false;
+        this.scaleY = false;
+        this.padding = 0;
+        this.paddingBg = 'rgba(255,255,255, 100)';
+        this.round = 10;
+        this.shadow = shadowFromIntensity(3);
+        history.commit('image:style-reset');
+        return true;
     }
     toggleFlip(type) {
         if (type === 'x') {
@@ -372,6 +484,7 @@ class Option {
             backgroundAssetId: this.backgroundAssetId,
             backgroundMode: this.backgroundMode,
             backgroundAlign: this.backgroundAlign,
+            backgroundGradientAngle: this.backgroundGradientAngle,
             backgroundBlur: this.backgroundBlur,
             backgroundMaskColor: this.backgroundMaskColor,
             backgroundMaskOpacity: this.backgroundMaskOpacity,
@@ -414,6 +527,7 @@ class Option {
             this.backgroundAssetId = next.backgroundAssetId;
             this.backgroundMode = next.backgroundMode;
             this.backgroundAlign = next.backgroundAlign;
+            this.backgroundGradientAngle = next.backgroundGradientAngle;
             this.backgroundBlur = next.backgroundBlur;
             this.backgroundMaskColor = next.backgroundMaskColor;
             this.backgroundMaskOpacity = next.backgroundMaskOpacity;
@@ -424,6 +538,7 @@ class Option {
             this.hdrEnabled = next.hdrEnabled;
             this.size = next.size;
             this.frameConf = next.frameConf;
+            this._syncGradientBackgroundFill();
             const asset = assetStore.get(this.backgroundAssetId);
             if (asset && this.background === 'upload_image' && this.frameConf.background?.type === 'image') {
                 this.frameConf.background = { ...this.frameConf.background, url: asset.url };

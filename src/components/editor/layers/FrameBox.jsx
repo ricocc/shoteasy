@@ -4,6 +4,8 @@ import { Frame } from 'leafer-ui';
 import stores from '@stores';
 import { blurImageUrl, buildLayeredFill } from '@utils/backgroundEffects';
 
+const BACKGROUND_CORNER_RADIUS = 20;
+
 const childrenInjectProps = (params, children) => {
     if (children instanceof Array) {
         return children.map((child) => {
@@ -30,6 +32,7 @@ const FrameBox = observer(({ width, height, background, parent, children, cursor
             height,
             overflow: 'hide',
             fill: background,
+            cornerRadius: BACKGROUND_CORNER_RADIUS,
             cursor: 'auto'
         });
         fra.name = 'frame';
@@ -65,6 +68,7 @@ const FrameBox = observer(({ width, height, background, parent, children, cursor
     useEffect(() => {
         frame.width = width;
         frame.height = height;
+        frame.cornerRadius = BACKGROUND_CORNER_RADIUS;
         // buildLayeredFill 无背景（无背景选项）时返回 null；Leafer 的 fill=null
         // 会回退到 Frame 默认白底，导致透明画布渲染/导出不透明，需显式赋透明色。
         frame.fill = effectiveFill ?? 'rgba(0,0,0,0)';

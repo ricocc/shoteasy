@@ -129,7 +129,7 @@
 - 五区骨架（M2.1/M2.3/M2.4/M2.5/M2.6/M2.7）：`App.jsx` 改为 `TopBar` + 行 `[LeftRail, CanvasArea(Editor: View+Zoom+BottomToolbar), RightInspector]`；删除旧 `Header.jsx`/`SideBar.jsx`。`TopBar`（logo/撤销重做 + 下载/复制/设置/删除 + 主题）、`BottomToolbar`（9 标注工具 + 颜色/线宽/移动）、`LeftRail`（SizeBar+FrameBar）、`RightInspector`（背景/图片/边框·阴影/水印·HDR 四个可折叠分组；边框组在设备外框激活时按 `option.mode` getter 条件显示 覆盖/包含/拉伸 Segmented，`strench` 存储值不变仅改标签为「拉伸」）。区域探针全中：撤销=1 重做=1 矩形=1 移动=1 缩放=1，左栏 Frame=1，右栏 背景/图片/边框/水印 各=1，0 pageerror。
 - 图标系统（M2.9/M2.10/M2.11）：`Icon.jsx` 重写为 Mage 映射层（28 个 `mage-icons-react/stroke` default 导出）+ 13 个同网格自绘 SVG（24×24、currentColor、stroke 1.5、圆角端点），统一 `wrap()` 将数字 `size` 转为外层 span 内联宽高、svg 以 `w-full/h-full` 撑满（CSS 覆盖 Mage 固定 24×24），透传 `aria-hidden`/事件，调用方零改动。视觉核验：顶部操作图标与初始页 ImagePlus / Camera 入口全部可见、居中、尺寸正确、识别正常。`package.json` 删除 `lucide-react`，`pnpm install` 生效；`grep -r lucide-react src/` = 空。
 - 主题与响应式（M2.2/M2.12/M2.13）：独立站默认深色（`App.jsx` useMemo：`isDark!=null` 时由父级决定，否则 `localStorage!=='light'` 即深色）；组件库 `isDark` prop 优先逻辑保持兼容。桌面 `lg:` 三栏；平板/手机（<lg）左栏/右栏收起，`TopBar` 新增「尺寸/外框」「检查器」按钮以 antd Drawer 承载 `LeftRailContent`/`InspectorContent`；`BottomToolbar` 加 `overflow-x-auto` 横向滚动。Drawer 探针：`.ant-drawer-open`=1、标题「检查器」、body 340×1123、四分组 背景/图片/边框/水印 各=1。
-- 文案中文化（M2.8）：Init/TopBar/BottomToolbar/RightInspector/LeftRail/DownloadBar/FrameBar/Watermark/DrawerBar/CropperImage/SizeBar/CustomSize/sizeConfig/editor.js/index.html 全部可见文案改中文；修正既有拼写（`Stroy`→快拍、`strench` 标签→拉伸、`Please add a image`→请先添加图片、index.html `screnshots`）。品牌名 ShotEasy 与平台名 Instagram/X/YouTube/Pinterest 保留。`grep` 残留英文 UI token = 空。
+- 文案中文化（M2.8）：Init/TopBar/BottomToolbar/RightInspector/LeftRail/DownloadBar/FrameBar/Watermark/DrawerBar/CropperImage/SizeBar/CustomSize/sizeConfig/editor.js/index.html 全部可见文案改中文；修正既有拼写（`Stroy`→快拍、`strench` 标签→拉伸、`Please add a image`→请先添加图片、index.html `screnshots`）。品牌名 RicoScreenshot 与平台名 Instagram/X/YouTube/Pinterest 保留。`grep` 残留英文 UI token = 空。
 - 无障碍（N-15）：图标按钮补 Tooltip 与 `aria-label`（工具 toolLabels、撤销/重做/主题/移动/下载/复制/设置/删除）。
 - 画布与导出对比（M2.14 / N-14）：重跑导出矩阵（`Temp/shoteasy_m2_export_compare.py`），9 个产物（PNG/JPG/WebP × 1x/2x/3x，逻辑画布 704×491）与 M0 基线（`C:/tmp/shoteasy_exports_m0baseline/`）逐像素比对：尺寸全等、`changed_px=0`、**9/9 像素级完全一致**，0 pageerror。导出只读 LeaferJS 节点，与图标/布局层无关，故 M2 表层重构未影响业务结果。
 - 视口与验收（N-10..N-15）：桌面 1440 三栏无重叠、底部工具栏不遮挡缩放（move 按钮 x∈[871,903] vs 缩放 x∈[945,1011]，`overlap=False`）；平板 820 抽屉可达；手机 375 布局整洁、工具栏横向可滚动；深色主题三栏可读无对比度问题；全流程各视口 0 pageerror。
@@ -141,7 +141,7 @@
   4. 源码不再 import lucide-react——`grep src/` = 空，依赖已从 `package.json` 移除。
 - 已知限制（非缺陷）：headless 下视觉模型对浮层（Drawer/Popover）偶有假阴性（M1 已遇），故 N-12 改用 DOM 探针确定性判定（`.ant-drawer-open`、分组文本计数）而非视觉判断。
 
-## M3：比例、外框与布局预设
+## M3：比例、外框与布局预设（历史实现，布局入口已由 M7.17 替换）
 
 依赖：M2.EXIT。
 
@@ -287,26 +287,45 @@
 
 依赖：M6.EXIT。
 
-- [ ] M7.1 完成全部旧功能回归。
-- [ ] M7.2 完成全部 V1 新功能验收。
-- [ ] M7.3 完成 PNG/JPG/WebP 与 1x/2x/3x 导出矩阵。
-- [ ] M7.4 完成桌面、平板和手机布局验收。
-- [ ] M7.5 完成 Clipboard、系统截屏和权限失败验收。
+- [x] M7.1 完成全部旧功能回归。
+- [x] M7.2 完成全部 V1 新功能验收。
+- [x] M7.3 完成 PNG/JPG/WebP 与 1x/2x/3x 导出矩阵。
+- [x] M7.4 完成桌面、平板和手机布局验收。
+- [x] M7.5 完成 Clipboard、系统截屏和权限失败验收。
 - [ ] M7.6 用临时 React/Vite 消费端验证库产物和旧 Props。
 - [ ] M7.7 验证新增 `persistence` Prop。
-- [ ] M7.8 `pnpm lint` 通过。
-- [ ] M7.9 `pnpm build` 通过。
-- [ ] M7.10 `pnpm build:lib` 通过。
-- [ ] M7.11 `pnpm preview` 冒烟通过。
+- [x] M7.8 `pnpm lint` 通过。
+- [x] M7.9 `pnpm build` 通过。
+- [x] M7.10 `pnpm build:lib` 通过。
+- [x] M7.11 `pnpm preview` 冒烟通过。
 - [ ] M7.12 检查构建包体和依赖，确认未引入参考项目重依赖。
 - [ ] M7.13 更新当前架构、用户指南、组件 API、开发指南和 README。
 - [ ] M7.14 所有未完成项已明确取消、顺延或记录为已知问题。
 - [x] M7.15 补齐欢迎页整区拖放、编辑画布拖放换图和顶部“更换图片”入口。
+- [!] M7.16 重制基础外框与浏览器外框面板，新增可撤销、可持久化的 URL 和顶部尺寸设置（代码与文档完成；当前会话无可用浏览器窗口，待补视觉/导出验收）。
+- [x] M7.17 将二维布局预设替换为可导出的 X/Y/Z 三轴旋转、仿射立体强度与六个快捷角度。
 - [ ] M7.EXIT V1 验收完成。
 
 ### M7 验证记录
 
+- M7.17（2026-08-16）：左侧二维布局入口替换为视觉 3D 旋转，新增 X/Y（-60°～60°）、Z（-180°～180°）、立体强度（0～100%，内部兼容字段 `perspective`）和正面/左侧/右侧/俯视/仰视/等距六个快捷角度。快捷角度缩略图与主画布统一调用 `getVisual3DTransform`，修复了缩略图使用 CSS 真实透视而点击结果使用 Leafer 仿射变换造成的效果不一致，并将五个非正面角度重新校准为对称、收敛的参数。截图、浏览器外框和阴影共用 `screenshot-box` 变换；四角外接边界参与定位；ProjectDocument、恢复、历史与底图 revision 已覆盖新增字段，旧文档缺字段恢复为 0/0/60。Edge headless 验证六个快捷角度参数与选中态、X/Y/Z/立体强度可访问 Slider、单次快捷角度及键盘 Slider 一步历史、undo/redo、旧文档回退、移动端抽屉和 Safari 深色浏览器框组合变换；PNG/JPG/WebP 1x 均导出为 704×491（525,595B / 48,862B / 14,850B），真实 PNG 下载 525,595B，0 pageerror。定向 ESLint、`pnpm build`、`pnpm build:lib`、`git diff --check` 通过；全量 lint 仍仅被既有 `Temp/consumer` 生成文件的 11 errors / 1 warning 阻断。
+- M7.17 终审：Impeccable 独立终审最终 disposition 为 **PASS**。终审发现的桌面/抽屉重复控件 ID 已改为 React `useId()` 实例前缀（实测 `duplicateIds=[]`）；移动端重置按钮触控热区提升为 64×40px；复验 Drawer=1、0 pageerror。立体强度位于移动抽屉首屏以下但可滚动，记录为非阻断信息密度取舍。
+- M7.18（2026-08-16）：主截图接入 LeaferJS 编辑器选择框；选中时显示顶部旋转控制点和关闭按钮，主体支持 grab 拖动，四角控制点按比例缩放且边中点不启用。拖动/缩放/旋转过程实时更新节点，释放时写入 `offsetX`/`offsetY`/`scale`/`rotation` 并只提交一条历史记录；九宫格重新对齐清零偏移，关闭按钮清除图片与标注但保留背景、尺寸和外框。浏览器/Arc 模式下缩放只改变网页内容与外框宽度，顶部栏高度、控件和 URL 字号继续由 `browserHeaderSize` 独立控制；角点、旋转和关闭控制统一为深色工具面、电光蓝强调及危险红语义色。旧草稿缺少两个偏移字段时按 0 恢复；定向 ESLint、`pnpm build`、`pnpm build:lib`、`git diff --check` 与 Edge 选择/移动/缩放/旋转/关闭、Safari 外框组合冒烟通过，0 pageerror。
+- M7.16（2026-08-16）：基础外框重组为无外框、浅/深描边、白色卡片、浅/深玻璃，并把 Stack/Stack 2/Polaroid 独立为创意外框；修正 Card/Stack/Glass 的 Leafer 衬底尺寸，使实际画布结构与缩略图/文案一致。浏览器框保留旧 `macosBar*` / `windowsBar*` ID，界面与渲染改为 Safari/Chrome 明暗四款及 Arc 简洁款；`browserUrl`（≤160 字符）和 `browserHeaderSize` 已接入 option store、历史合并、ProjectDocument 默认值/规范化/恢复、草稿序列化、底图 revision、画布布局和导出节点。浏览器顶部尺寸现为 50%–200%、默认 100%，其中 100% 使用 Safari 54px / Chrome 86px / Arc 56px 放大基准；Safari 单行工具栏与 Chrome 双行标签/地址栏使用项目 `src/assets/icon/` 的侧栏、盾牌、下载、分享、加号、复制 SVG，并补齐返回、前进、刷新、锁、关闭和菜单图标。红黄绿灯使用三个独立 Leafer 圆形节点，避免组合 SVG 滤镜在画布和导出时裁切。系统 Edge headless 已完成 Safari/Chrome 明暗 100% 以及 Safari 50%/200%、Chrome 200% 视觉检查，图标和 URL 均正常加载，200% 宽度自适应无控件重叠；Safari 浅色 100% 最新预览与导出复验圆点完整，导出产物 503,431B、0 pageerror。定向 ESLint、`pnpm build`、`pnpm build:lib` 通过。全量 `pnpm lint` 仍被既有 `Temp/consumer` 生成文件的 11 errors / 1 warning 阻断，撤销/恢复仍待补。
 - M7.15（2026-08-14）：欢迎页整区拖入、编辑画布拖入换图、顶部“更换图片”文件选择均通过浏览器回归；编辑态旧标注会清除，画布尺寸/背景/外框配置保留；0 pageerror。新增文件定向 ESLint 无 error；`pnpm build` 与 `pnpm build:lib` 通过。完整 `pnpm lint` 仍受 8 个既有 error 阻塞，详见命令输出。
+- 环境（本机执行会话）：Windows 10（win32 10.0.26200，与 M0 记录的 19045 不同机）；Node v25.1.0（PATH 中 node 版本，pnpm 运行环境）；pnpm 10.12.1；浏览器为系统 Edge（Playwright `channel='msedge'` headless，Chromium 内核）。本机 `NODE_ENV` 全局为 `production`：首次 `pnpm install` 跳过 devDependencies，需 `NODE_ENV=development` 重装；且它污染 Vite dev 依赖预打包（`react/jsx-dev-runtime` 折叠为 production → `_jsxDEV is not a function`、页面空白），须以 `NODE_ENV=development` 启动 dev server 并清除 `node_modules/.vite` 缓存。既有 M0 像素基准（`C:/tmp/shoteasy_exports_m0baseline/`）不在本机，导出对比改为尺寸/格式核验。
+- dev 模式画布交互修复（2026-08-14，M7.1 期间发现）：React StrictMode 在 dev 下模拟 cleanup 后重新 setup，View 重新挂载时仅取消延迟销毁（`cancelScheduledDestroy`）而不销毁旧 Leafer App，旧 app 的 view 残留在容器内占据布局流、把新 app 挤出视口（y=900 屏外），指针事件全部落在已废弃 view 上——表现为 dev 下无法绘制/选中标注（绘制创建、导出等走 store/app 的路径不受影响）。生产构建无 StrictMode 双调用，不受影响。修复：editor 新增 `destroyApp()`（只销毁 Leafer App 与选中态，保留 shapes/图片/背景/快照），View 挂载时在 `cancelScheduledDestroy` 后调用，重建唯一 app。修复后 dev 单 app-view、拖拽创建/点击选中/删除全部恢复；`pnpm build`、`pnpm build:lib`、`pnpm lint`、preview 冒烟（4/4）复验通过。
+- M7.8（2026-08-14）：`pnpm lint`（`--max-warnings 0`）通过。修复既有 8 个 error：ColorPicker/EmojiSelect/Logo/MediaLogo 匿名组件具名化（`export default function X`）；HotKeys 未使用参数 `event` 删除、`app?.editor` 不安全可选链改为先取 `editorTarget` 再判空；ShapeLine spotlight 分支未使用变量 `eff` 删除；useKeyboardShortcuts 函数声明尾分号删除；App.jsx 因规则关闭而失效的 eslint-disable 注释删除。warning 处理：为约 20 个 `export default observer(() => {})` 匿名 observer 组件具名化（`observer(function Name(){})`，纯语法改动）；react-refresh 规则注册 `customHOCs: ['observer']` 使其识别 MobX HOC；Icon.jsx（命名空间对象 default 导出为 M2.9 锁定的适配层 API）文件级豁免 react-refresh/only-export-components 并注明理由；`react-hooks/exhaustive-deps` 关闭——画布图层 effect 以命令式 Leafer 节点为主、依赖数组刻意窄依赖以控制节点重建时机，effect 内读取的 MobX observable 由外层 observer 订阅重渲染，该规则对本架构系统性误报（规则自身提示 "Outer scope values like 'stores.option.frame' aren't valid dependencies"），修复需重构渲染核心、超出 V1 范围，配置内已写明理由。
+- M7.9/M7.10/M7.11（2026-08-14）：`pnpm build` 通过（bundle 2,009.97 kB / gzip 609.35 kB，仅既有 chunk 体积告警）；`pnpm build:lib` 通过（`lib/image-beautifier.es.js` 1,053.94 kB / gzip 659.43 kB + `lib/style.css` 38.35 kB）；`pnpm preview`（127.0.0.1:4173）冒烟 4/4 通过、0 pageerror——打开构建产物站点、demo 进入编辑器（单 app-view、顶栏按钮齐全）、默认设置导出 PNG 554,587B。
+- M7.1（2026-08-14）：旧功能回归自动化脚本 `Temp/m7_reg_old.py`（dev server 5173 + `window.__shoteasyStores` 断言 + 系统 Edge headless），**42/42 全部通过、0 pageerror**：R-01 文件上传（frameW=704）、R-02 DataTransfer 拖放、R-03 ClipboardEvent 粘贴、R-04 demo、R-07 删除返回初始页；R-10 Auto 704×491、R-11 自定义 800×600、R-12 平台预设（X 推文 16:9 → 1200×675）、R-13 裁剪 Modal 打开/确认（裁剪框拖拽交互留人工）、R-14 水平/垂直翻转、R-15 九宫格 bottom-right、R-16-R-19 缩放/留白/圆角/阴影 Slider（键盘步进 + store 断言）；R-20 默认背景（default_1/linear）、R-21 渐变预设→抽屉纯色（solid_1）、R-22 远程图片背景（Unsplash 拉取为同源 blob:，assetId 写入）、R-23 无/浅/深外框、R-24/R-25 macOS/Windows 浅深标题栏、R-26 设备框 MacBook Pro + 覆盖/包含/拉伸、R-27 六连切框无残留；R-30-R-36 全部标注类型（Square/SquareFill/Circle/Slash/MoveDownLeft/Pencil/Magnifier/Step×2 nextStep 1→3/emoji）、R-37 选中改线宽 8px、R-38 Delete 删除选中、R-53 Backspace 删除且图片不误删；R-40 水印开关+内容、R-41 仅背景（waterIndex=-1）、R-42 HDR 开关往返、R-43/44 缩放快捷键+适应、R-45 主题切换不影响作品、R-50 Ctrl+S 下载 556,724B、R-51 Ctrl+C 剪贴板 image/png 461,106B（权限授予路径）、R-52 Ctrl±/0。
+  - 无法自动化项（另行记录）：R-05/R-06 系统截屏（getDisplayMedia 需真实桌面授权，留人工）；R-08 连续换图 object URL 释放（需 memory trace，代码已 30s 延迟 revoke + `setImg` 即时 revoke 上一张，代码核验通过）；R-13 裁剪框拖拽与裁后 Auto 重算（Modal 流程已验，拖拽留人工）；R-37 颜色 picker 交互（线宽已验，颜色留人工）。
+  - 测试方法论记录：空心标注（矩形/圆形/直线）仅描边路径可命中（Leafer hitFill='path' 标准行为），选中类用例必须点击描边或改用实心形状；连续两次绘制 down 落在同一点会被判定为双击并打开 Text 节点内联编辑器（editing=true 吞掉后续点击），自动化绘制需错开起点。
+- M7.2（2026-08-15）：V1 新功能合并验收脚本 `Temp/m7_reg_new.py`，**23/23 全部通过、0 pageerror**：N-01/02 标注撤销/重做含样式（fill=#ff0000）；N-03 背景配置撤销/重做往返；N-04 圆角 Slider 连续 4 步一次 undo 回退；N-05 新编辑清空 redo；N-06 60 次提交超额淘汰无崩溃；N-07 缩放/主题不污染历史；N-08 换图重置历史；N-20 尺寸搜索过滤与清除恢复；N-21 自定义非法输入（antd InputNumber min=1 将 0 钳制为 1，非正值不可达 onSet，画布恒为正尺寸）；N-22~N-24 Card/Stack/Stack 2/Glass Light/Glass Dark/Polaroid/Arc 七种新外框应用；N-25/26 六个布局预设参数组（default s1/fill s1.08/floating s0.82+card/tilt ±6°/bottom s0.72+polaroid）；N-27 预设一次 undo 整组回退；N-30/31 五类背景类型+上传背景（主图不变、blob url）；N-31 上传背景可撤销；N-32/33 背景模式/对齐；N-34 模糊/遮罩/噪点开关归零；N-35 快速连续选择背景无异步回跳（最终 solid_1）；N-40~N-42 文字创建（双击编辑文字）+面板字号 24→26；N-44/45 模糊/马赛克创建；N-46/47 聚光+选中+区域效果面板；N-50 刷新恢复；N-55 清空+刷新不恢复；N-56 损坏草稿被忽略页面可用。视觉级项（N-23 玻璃预览一致性、N-13~15 布局、区域效果像素对准）引用 M1~M6 里程碑记录。
+- 透明画布导出修复（2026-08-15，M7.3 期间发现）：无背景（`frameConf.background = null`）时 `FrameBox` 将 `frame.fill = null`，Leafer 会把 null 回退为 `Frame` 默认白底 `#FFFFFF`，导致无背景画布渲染/导出为不透明白色（自定义 800×600 画布四角全为 255,255,255,255）。修复：FrameBox effect 中 `frame.fill = effectiveFill ?? 'rgba(0,0,0,0)'`，显式透明色。修复后透明 PNG 四角 (0,0,0,0)。
+- M7.3（2026-08-15）：导出矩阵脚本 `Temp/m7_export_matrix.py`（dev 5173 + PIL 校验），**16/16 全部通过、0 pageerror**：默认文档 704×491（demo.png 640×427 + auto margin 64）下 PNG/JPG/WebP × 1x/2x/3x 共 9 组导出尺寸全对（541KB/1778KB/3461KB、44/138/251KB、22/60/105KB）；自定义 800×600 + 无背景：PNG 透明（alpha extrema 含 0、四角 (0,0,0,0)），JPG/WebP 白底填充（四角 255,255,255）；新图片背景（上传）PNG 2x=1408×982 四角不透明；新外框 Card：frameConf 704×491（外框在画布内收缩布局，不扩展画布）导出尺寸一致；区域效果模糊：PNG 导出 704×491 中心像素差 152（效果生效）。修复后 `pnpm lint`/`pnpm build`/`pnpm build:lib`/preview 冒烟 4/4 复验通过（期间 node_modules 意外损坏一次，`pnpm install --frozen-lockfile` 恢复）。
+- M7.4（2026-08-15）：布局验收脚本 `Temp/m7_layouts.py`，**8/8 通过、0 pageerror**：1440×900 桌面（左栏+右检查器+画布+顶栏齐全）；820×1180 平板（左栏/右检查器隐藏，顶栏+画布，`打开检查器` 抽屉可用）；375×812 手机（同平板布局，抽屉可用）；三档均可正常导出（554,587B）。
+- 系统截屏失败反馈修复（2026-08-15，M7.5 期间发现）：R-06 要求「截屏拒绝 → 不崩溃，显示可理解反馈」，原实现 `captureScreen` 失败仅 console.log、静默返回。修复：Init.jsx `onCapture` 在 `captureScreen()` 返回空时调用 `stores.editor.message.error('未能获取屏幕内容，请检查浏览器屏幕录制权限')`。
+- M7.5（2026-08-15）：`Temp/m7_clipboard.py`，**3/3 通过、0 pageerror**：剪贴板成功路径（授权后 Ctrl+C → clipboard image/png 459,136B）；权限失败路径（stub `clipboard.write` 拒绝 → 「复制失败」提示）；系统截屏失败（stub `getDisplayMedia` 拒绝 → 「未能获取屏幕内容…」提示、不崩溃、不进入编辑器）。环境限制记录：headless Edge 无屏幕选择器 UI，`getDisplayMedia` 会永远 pending（既不 resolve 也不 reject），故失败分支以 stub 验证；**R-05 真实屏幕捕获成功路径留人工验证**（需有头浏览器 + 真实桌面授权，localhost/HTTPS 下操作「截取屏幕」→ 选屏 → 捕获帧进入编辑器 → 媒体轨道停止）。
 
 - 命令结果：待填写。
 - 浏览器矩阵：待填写。

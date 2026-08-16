@@ -1,14 +1,16 @@
-# rico-screenshot
+# RicoScreenshot
 
-![preview](https://github.com/CH563/image-beautifier/blob/main/preview.png)
+> 基于 [ShotEasy / image-beautifier](https://github.com/CH563/image-beautifier) 二次开发的开源截图美化工具 · 作者 [Rico](https://ricoui.com)
 
-纯前端（无后端）的截图 / 图片美化编辑器：图片读取、编辑、标注、导出全部在浏览器端完成。既可以作为独立网站运行，也可以打包成 `image-beautifier` React 组件库供第三方集成。
+![preview](https://github.com/ricocc/shoteasy/blob/main/preview.png)
 
-上游在线预览：<https://screenshot.shoteasy.fun/>
+**在线使用：<https://shot.ricoui.com/>**（纯浏览器端处理，图片不上传服务器）
+
+纯前端（无后端）的截图 / 图片美化编辑器：图片读取、编辑、标注、导出全部在浏览器端完成。既可以作为独立网站运行，也可以打包成 React 组件库供第三方集成。
 
 ## 功能特性
 
-- 截图美化：渐变/纯色/纹理背景、圆角、阴影、留白
+- 截图美化：渐变/纯色/图片背景（Unsplash 精选）、圆角、阴影、留白
 - 图片标注：方框、圆圈、箭头、直线、Emoji 表情
 - 图片局部放大（放大镜）
 - 添加水印（支持仅背景水印、HDR 效果）
@@ -55,31 +57,6 @@ pnpm dev
 
 项目没有后端服务、环境变量和数据库迁移；也没有自动化测试，改动后请至少运行 `pnpm lint` 和对应构建，并做浏览器手工验证（回归清单见 [DOCS/development.md](DOCS/development.md)）。
 
-## 作为 React 组件使用
-
-安装 npm 包：
-
-```bash
-npm install image-beautifier
-```
-
-React 组件示例：
-
-```jsx
-import { ImageBeautifier } from 'image-beautifier';
-import 'image-beautifier/lib/style.css';
-
-function App() {
-  return (
-    <ImageBeautifier
-      persistence={{ key: 'my-editor', autoRestore: true }}
-    />
-  );
-}
-```
-
-组件默认不读写本地草稿；需要恢复草稿时显式传入 `persistence`。完整 Props 说明见 [DOCS/component-api.md](DOCS/component-api.md)。
-
 ## 文档
 
 详细文档在 [`DOCS/`](DOCS/README.md) 目录：
@@ -88,7 +65,6 @@ function App() {
 - [架构与数据流](DOCS/architecture.md)：MobX 状态、LeaferJS 画布、图层与导出链路
 - [用户功能](DOCS/user-guide.md)：导入、画布、标注、边框、水印与导出
 - [开发指南](DOCS/development.md)：环境、命令、开发约定、回归清单
-- [组件 API](DOCS/component-api.md)：npm 库入口与 `ImageBeautifier` 属性
 - [V1 规划](DOCS/v1/README.md)：二次开发的 roadmap 与任务清单
 
 ## 技术栈
@@ -101,13 +77,21 @@ function App() {
 ## Roadmap / TODO
 
 - [ ] Redo / Undo 步骤记录
-- [ ] 接入 Unsplash 背景图
 - [ ] 文字卡片
 - [ ] 代码美化卡片
 - [ ] GIF 动画
 
+## 关于作者
+
+我是 [Rico](https://ricoui.com)，网页/UI 设计师，热衷于做些有趣和创意的作品。拥有 UI/UX 设计工作经验，目前专注于网页设计和视觉落地，以及开发项目探索。
+
+- 博客：[Rico's Blog](https://ricoui.com)
+- X（Twitter）：[@ricouii](https://x.com/ricouii)
+- 小红书：@Rico的设计漫想
+- 微信公众号：Rico的设计漫想
+
 ## 致谢与协议
 
-本项目基于开源项目 [image-beautifier](https://github.com/CH563/image-beautifier)（RicoScreenshot 截图插件内核）二次开发，上游将用于谷歌截图插件 [RicoScreenshot](https://chromewebstore.google.com/detail/nmppkehciohcgcehlnifgeokgioidknh)。
+本项目基于开源项目 [image-beautifier](https://github.com/CH563/image-beautifier)（ShotEasy 截图插件内核）二次开发，感谢上游作者 [Chenliwen](https://github.com/CH563) 的工作；上游用于谷歌截图插件 [ShotEasy](https://chromewebstore.google.com/detail/nmppkehciohcgcehlnifgeokgioidknh)。
 
-[MIT License](license) © Chenliwen
+[MIT License](license) © Chenliwen（上游）· 二次开发 © [Rico](https://ricoui.com)

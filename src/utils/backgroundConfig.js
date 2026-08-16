@@ -1,67 +1,182 @@
+const ADDITIONAL_GRADIENT_STOPS = [
+    ['#f5f7fa', '#c3cfe2', '#e0c3fc','#8ec5fc'],
+    ['#ff9a9e', '#fecfef', '#c1dfc4', '#deecdd'],
+    ['#2193b0', '#6dd5ed', '#cc2b5e', '#753a88'],
+    ['#43e97b', '#38f9d7', '#fa7199'],
+    ['#5ee7df', '#b490ca', '#43cea2', '#185a9d', '#6713d2'],
+    ['#09203f', '#537895', '#243949'],
+    ['#13547a', '#80d0c7', '#07a3b2', '#d9afd9', '#ff7a72'],
+    ['#0ba360', '#3cba92', '#30dd8a'],
+    ['#ff9a9e', '#fecfef', '#fad0c4'],
+    ['#c1dfc4', '#deecdd', '#7de2fc', '#b9b6e5'],
+    ['#f5f7fa', '#c3cfe2', '#e0c3fc', '#8ec5fc'],
+    ['#48c6ef', '#6f86d6', '#c471ed', '#f64f59'],
+    ['#89f7fe', '#66a6ff', '#48c6ef'],
+    ['#00dbde', '#fc00ff', '#0093e9'],
+    ['#4481eb', '#04befe', '#3f5efb', '#fc466b'],
+    ['#30e8bf', '#ff8235', '#feac5e'],
+    ['#f43b47', '#453a94', '#0250c5'],
+    ['#ffecd2', '#fcb69f', '#fd1d1d', '#833ab4', '#405de6'],
+    ['#0250c5', '#d43f8d', '#0fd850'],
+    ['#834d9b', '#d04ed6', '#1cd8d2'],
+    ['#d9afd9', '#97d9e1', '#a7a6cb'],
+    ['#eecda3', '#ef629f', '#78ffd6'],
+    ['#667db6', '#0082c8', '#0082c8', '#667db6'],
+    ['#764ba2', '#667eea', '#63b3ed', '#434343'],
+    ['#209cff', '#68e0cf', '#96fbc4', '#f9f586', '#f6d5f7'],
+    ['#37ecba', '#72afd3', '#ff4b1f', '#1fddff'],
+    ['#fff1eb', '#ace0f9', '#a18cd1', '#fbc2eb'],
+    ['#373b44', '#4286f4', '#00c6ff'],
+    ['#ff0844', '#ffb199', '#ff8177'],
+    ['#a1c4fd', '#c2e9fb', '#93a5cf'],
+    ['#ed6ea0', '#ec8c69', '#f7186a', '#fbb03b'],
+    ['#fdfcfb', '#e2d1c3', '#f5f7fa', '#c3cfe2'],
+    ['#b465da', '#cf6cc9', '#ee609c', '#ee609c', '#f59c65'],
+    ['#ff8008', '#ffc837', '#ff0099'],
+    ['#00c6fb', '#005bea', '#21d4fd', '#b721ff'],
+    ['#b721ff', '#21d4fd', '#0052d4', '#4364f7', '#6fb1fc'],
+    ['#74ebd5', '#acb6e5', '#0fd850'],
+    ['#f093fb', '#f5576c', '#4facfe', '#00f2fe'],
+    ['#000000', '#434343', '#ffffff'],
+    ['#f5f5f5', '#bdbdbd', '#424242', '#000000'],
+    ['#111111', '#537895', '#09203f'],
+    ['#0f2027', '#203a43', '#2c5364'],
+    ['#ff512f', '#f09819', '#ff6a00'],
+    ['#00f5a0', '#00d9f5', '#7a00ff'],
+    ['#134e5e', '#71b280', '#dce35b'],
+    ['#ff6fd8', '#3813c2', '#00dbde'],
+];
+
+const additionalGradientConfig = Object.fromEntries(
+    ADDITIONAL_GRADIENT_STOPS.map((stops, index) => {
+        const key = `gradient_${index + 4}`;
+        return [key, {
+            class: 'bg-transparent',
+            previewStyle: { background: `linear-gradient(135deg, ${stops.join(', ')})` },
+            fill: {
+                type: 'linear',
+                from: 'top-left',
+                to: 'bottom-right',
+                stops,
+            },
+        }];
+    })
+);
+
+const formatGradientPreviewStop = (stop) => {
+    if (typeof stop === 'string') return stop;
+    const percentage = Number((Number(stop.offset) * 100).toFixed(3));
+    return `${stop.color} ${percentage}%`;
+};
+
+const createLinearGradientConfig = (stops, { angle, from, to }) => ({
+    class: 'bg-transparent',
+    gradientAngle: angle,
+    previewStyle: {
+        background: `linear-gradient(${angle}deg, ${stops.map(formatGradientPreviewStop).join(', ')})`,
+    },
+    fill: {
+        type: 'linear',
+        from,
+        to,
+        stops,
+    },
+});
+
+const createAngularGradientConfig = (stops, angle) => ({
+    class: 'bg-transparent',
+    gradientAngle: angle,
+    previewStyle: {
+        background: `conic-gradient(from ${angle}deg, ${stops.map(formatGradientPreviewStop).join(', ')})`,
+    },
+    fill: {
+        type: 'angular',
+        from: 'center',
+        rotation: angle,
+        stops,
+    },
+});
+
+// default_3 使用近似 1px 的极窄过渡，保留 Grabient 原始的分段色带效果。
+const createHardStops = (colors) => {
+    // Grabient 的第一个颜色也占据一个完整区间，因此区间数等于颜色数。
+    const segmentCount = Math.max(1, colors.length);
+    const gap = Math.min(0.001, 1 / segmentCount / 4);
+    const stops = [{ offset: 0, color: colors[0] }];
+    for (let index = 0; index < colors.length - 1; index += 1) {
+        const boundary = (index + 1) / segmentCount;
+        stops.push({ offset: boundary, color: colors[index] });
+        stops.push({ offset: Math.min(1, boundary + gap), color: colors[index + 1] });
+    }
+    stops.push({ offset: 1, color: colors[colors.length - 1] });
+    return stops;
+};
+
+const DEFAULT_3_STOPS = createHardStops([
+    '#c8d5c8', '#d0d3bd', '#d4ceaf', '#d5c59e', '#d2b88c', '#cbaa79',
+    '#c19865', '#b48651', '#a5723f', '#935f2e', '#804b20', '#6c3914',
+    '#59290b', '#461c06', '#341105', '#250908', '#18060e', '#0e0617',
+    '#080924', '#051033', '#061b45', '#0b2958', '#13396b', '#1f4b7f',
+    '#2d5e92', '#3e72a4', '#5085b3', '#6498c1', '#77a9cb', '#8bb8d2',
+    '#9dc4d5', '#aecdd4', '#bcd3d0', '#c7d5c8',
+]);
+
 const legacyBackgroundConfig = {
-    default_1: {
-        class: 'bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500',
-        fill: {
-            type: 'linear',
-            from: 'left',
-            to: 'right',
-            stops: ['#6366f1', '#a855f7', '#ec4899'],
-        },
-    },
-    default_2: {
-        class: 'bg-gradient-to-r from-red-500 via-pink-500 to-violet-500',
-        fill: {
-            type: 'linear',
-            from: 'left',
-            to: 'right',
-            stops: ['#ef4444', '#ec4899', '#8b5cf6'],
-        },
-    },
-    default_3: {
-        class: 'bg-gradient-to-r from-violet-800 via-pink-600 to-orange-500',
-        fill: {
-            type: 'linear',
-            from: 'left',
-            to: 'right',
-            stops: ['#5b21b6', '#db2777', '#f97316'],
-        },
-    },
-    default_4: {
-        class: 'bg-gradient-to-r from-orange-400 to-rose-400',
-        fill: {
-            type: 'linear',
-            from: 'left',
-            to: 'right',
-            stops: ['#fb923c', '#fb7185'],
-        },
-    },
-    default_5: {
-        class: 'bg-gradient-to-r from-[#4284DB] to-[#29EAC4]',
-        fill: {
-            type: 'linear',
-            from: 'left',
-            to: 'right',
-            stops: ['#4284DB', '#29EAC4'],
-        },
-    },
-    default_6: {
-        class: 'bg-gradient-to-r from-[#fc00ff] to-[#00dbde]',
-        fill: {
-            type: 'linear',
-            from: 'left',
-            to: 'right',
-            stops: ['#fc00ff', '#00dbde'],
-        },
-    },
-    default_7: {
-        class: 'bg-gradient-to-br from-[#eeddf3] via-[#ee92b1] to-[#6330b4]',
-        fill: {
-            type: 'linear',
-            from: 'left',
-            to: 'right',
-            stops: ['#eeddf3', '#ee92b1', '#6330b4'],
-        },
-    },
+    default_1: createLinearGradientConfig(
+        ['#f5f7fa', '#c3cfe2', '#e0c3fc', '#8ec5fc'],
+        { angle: 90, from: 'left', to: 'right' }
+    ),
+    default_2: createLinearGradientConfig(
+        ['#002e5d', '#002e5d', '#2774ae'],
+        { angle: 90, from: 'left', to: 'right' }
+    ),
+    default_3: createLinearGradientConfig(
+        DEFAULT_3_STOPS,
+        { angle: 90, from: 'left', to: 'right' }
+    ),
+    default_4: createLinearGradientConfig(
+        ['#cedefd', '#b1d7f5', '#8fc6ed', '#6daae4', '#4b87dc', '#2e5ed4'],
+        { angle: 180, from: 'top', to: 'bottom' }
+    ),
+    default_5: createLinearGradientConfig(
+        ['#434343', '#000000'],
+        { angle: 90, from: 'left', to: 'right' }
+    ),
+    default_6: createLinearGradientConfig(
+        ['#c9bce0', '#bed3d4', '#d3e2bd', '#f5ddaf', '#ffc8b6', '#f0b5cb', '#ceb5de', '#bdc8de', '#ceddcb'],
+        { angle: 225, from: 'top-right', to: 'bottom-left' }
+    ),
+    default_7: createLinearGradientConfig(
+        ['#09203f', '#537895'],
+        { angle: 0, from: 'bottom', to: 'top' }
+    ),
+    default_8: createLinearGradientConfig(
+        ['#0a0000', '#250a26', '#49457a', '#767baa', '#aba9b5'],
+        { angle: 0, from: 'bottom', to: 'top' }
+    ),
+    default_9: createLinearGradientConfig(
+        ['#140e0c', '#1b121f', '#231733', '#2a1e48', '#33275d', '#3c3172', '#453c87', '#4e479a', '#5951ad', '#635cbf', '#6e65cf', '#796ede', '#8574ea', '#9179f4', '#9d7cfc', '#aa7dff', '#b67cff', '#c478ff', '#d173ff', '#df6cfe', '#ed63f7'],
+        { angle: 0, from: 'bottom', to: 'top' }
+    ),
+    default_10: createAngularGradientConfig([
+        '#000021', '#00000b', '#000000', '#000000', '#000000', '#000000', '#000000',
+        '#180000', '#320000', '#4b0000', '#630000', '#7a0100', '#8d1700', '#9d2e02',
+        '#a94518', '#af5b2e', '#b07045', '#ac825c', '#a39270', '#969e83', '#84a692',
+        '#6faa9e', '#57aaa5', '#3ea5a9', '#259ba7', '#0c8ea2', '#007e98', '#006b8a',
+        '#005579', '#003f65', '#002850', '#001139', '#000022', '#00000c',
+    ], 180),
+    default_11: createLinearGradientConfig(
+        ['#ffc488', '#ffa375', '#ff907a', '#ff9394', '#ffacb0', '#ffcdb9', '#ffe6aa'],
+        { angle: 315, from: 'bottom-right', to: 'top-left' }
+    ),
+    default_12: createLinearGradientConfig(
+        ['#193132', '#0f5a65', '#32918b', '#74bda5', '#becab1', '#f2b2b0'],
+        { angle: 90, from: 'left', to: 'right' }
+    ),
+    default_13: createLinearGradientConfig(
+        ['#fda373', '#ffdbb0', '#fcffe4', '#ccffff', '#8bf1ff', '#4ec0e4', '#2585b0'],
+        { angle: 90, from: 'left', to: 'right' }
+    ),
     solid_1: {
         class: 'bg-transparent',
         fill: {
@@ -244,6 +359,7 @@ const legacyBackgroundConfig = {
             stops: ['#f9f047', '#0fd850'],
         },
     },
+    ...additionalGradientConfig,
     cosmic_img_1: {
         class: 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3wxMTY5OTZ8MHwxfHNlYXJjaHwxfHxncmFkaWVudHxlbnwwfHx8fDE3MDMwNjAzNjh8MA&ixlib=rb-4.0.3&q=80',
         fill: {
@@ -349,6 +465,42 @@ const legacyBackgroundConfig = {
             url: 'https://images.unsplash.com/photo-1586455122341-927f2dec0691?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3wxMTY5OTZ8MHwxfHNlYXJjaHw3MHx8Z3JhZGllbnR8ZW58MHx8fHwxNzAzMDQ3MjE1fDA&ixlib=rb-4.0.3&q=80'
         }
     },
+    // 天空白云（Unsplash 免费图，简化参数：auto/fit/w=2400 控制预览与导出分辨率）
+    cloud_img_1: {
+        class: 'https://images.unsplash.com/photo-1595865749889-b37a43c4eba4?auto=format&fit=crop&w=2400&q=80',
+        fill: {
+            type: 'image',
+            url: 'https://images.unsplash.com/photo-1595865749889-b37a43c4eba4?auto=format&fit=crop&w=2400&q=80'
+        }
+    },
+    cloud_img_2: {
+        class: 'https://images.unsplash.com/photo-1566321343730-237ec35e53f3?auto=format&fit=crop&w=2400&q=80',
+        fill: {
+            type: 'image',
+            url: 'https://images.unsplash.com/photo-1566321343730-237ec35e53f3?auto=format&fit=crop&w=2400&q=80'
+        }
+    },
+    cloud_img_3: {
+        class: 'https://images.unsplash.com/photo-1603376277241-70b32265cf10?auto=format&fit=crop&w=2400&q=80',
+        fill: {
+            type: 'image',
+            url: 'https://images.unsplash.com/photo-1603376277241-70b32265cf10?auto=format&fit=crop&w=2400&q=80'
+        }
+    },
+    cloud_img_4: {
+        class: 'https://images.unsplash.com/photo-1538449492226-2c34ed994f3e?auto=format&fit=crop&w=2400&q=80',
+        fill: {
+            type: 'image',
+            url: 'https://images.unsplash.com/photo-1538449492226-2c34ed994f3e?auto=format&fit=crop&w=2400&q=80'
+        }
+    },
+    cloud_img_5: {
+        class: 'https://images.unsplash.com/photo-1668525389832-4632957c56e6?auto=format&fit=crop&w=2400&q=80',
+        fill: {
+            type: 'image',
+            url: 'https://images.unsplash.com/photo-1668525389832-4632957c56e6?auto=format&fit=crop&w=2400&q=80'
+        }
+    },
     desktop_img_1: {
         class: 'https://images.unsplash.com/photo-1511860810434-a92f84c6f01e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&q=80',
         fill: {
@@ -390,7 +542,7 @@ const getBackgroundType = (key) => {
     if (key === 'none') return 'none';
     if (key.startsWith('solid_') || key === 'custom_solid') return 'solid';
     if (key.startsWith('default_') || key.startsWith('gradient_')) return 'gradient';
-    if (key.startsWith('cosmic_img_') || key.startsWith('desktop_img_')) return 'builtin-image';
+    if (key.startsWith('cosmic_img_') || key.startsWith('cloud_img_') || key.startsWith('desktop_img_')) return 'builtin-image';
     return 'solid';
 };
 
@@ -400,6 +552,7 @@ const getBackgroundCategory = (key) => {
     if (key.startsWith('solid_') || key === 'custom_solid') return 'solid';
     if (key.startsWith('gradient_')) return 'gradient';
     if (key.startsWith('cosmic_img_')) return 'cosmic';
+    if (key.startsWith('cloud_img_')) return 'cloud';
     if (key.startsWith('desktop_img_')) return 'desktop';
     return 'custom';
 };
@@ -453,6 +606,16 @@ export const normalizeBackgroundKey = (value) => {
 };
 
 export const getBackgroundDefinition = (value) => normalizedBackgroundConfig[normalizeBackgroundKey(value)];
+
+/**
+ * 检查器「预设」区直出的图片背景（从内置图片精选 10 张：5 天空 + 3 宇宙 + 2 桌面），
+ * 免开「更多」抽屉即可一键选中；完整列表仍在抽屉里。
+ */
+export const QUICK_IMAGE_KEYS = [
+    'cloud_img_1', 'cloud_img_2', 'cloud_img_3', 'cloud_img_4', 'cloud_img_5',
+    'cosmic_img_1', 'cosmic_img_5', 'cosmic_img_9',
+    'desktop_img_1', 'desktop_img_2',
+].filter((key) => Boolean(normalizedBackgroundConfig[key]));
 
 export const getBackgroundEntries = (category) => Object.values(normalizedBackgroundConfig)
     .filter((item) => !item.hidden && (!category || item.category === category));

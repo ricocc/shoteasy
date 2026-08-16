@@ -2,6 +2,19 @@ import { getBackgroundDefinition, normalizeBackgroundKey } from '@utils/backgrou
 
 const BACKGROUND_MODES = ['cover', 'fit', 'stretch'];
 const BACKGROUND_ALIGNS = ['top-left', 'top', 'top-right', 'left', 'center', 'right', 'bottom-left', 'bottom', 'bottom-right'];
+const DEFAULT_GRADIENT_ANGLE = 90;
+
+const getGradientPresetAngle = (definition) => {
+    if (definition?.type !== 'gradient') return DEFAULT_GRADIENT_ANGLE;
+    return definition.gradientAngle ?? (definition.fill?.from === 'top-left' ? 135 : DEFAULT_GRADIENT_ANGLE);
+};
+
+const normalizeGradientAngle = (value, fallback = DEFAULT_GRADIENT_ANGLE) => {
+    const angle = Number(value);
+    return Number.isFinite(angle)
+        ? Math.max(0, Math.min(360, Math.round(angle)))
+        : fallback;
+};
 
 /**
  * V1 项目文档（ProjectDocument）
@@ -105,6 +118,7 @@ export function defaultOption() {
         backgroundAssetId: null,
         backgroundMode: 'cover',
         backgroundAlign: 'center',
+        backgroundGradientAngle: DEFAULT_GRADIENT_ANGLE,
         backgroundBlur: 0,
         backgroundMaskColor: '#000000',
         backgroundMaskOpacity: 0,
@@ -121,7 +135,7 @@ export function defaultOption() {
                 type: 'linear',
                 from: 'left',
                 to: 'right',
-                stops: ['#6366f1', '#a855f7', '#ec4899']
+                stops: ['#f5f7fa', '#c3cfe2', '#e0c3fc', '#8ec5fc']
             }
         }
     };
@@ -149,7 +163,7 @@ export function normalizeShape(raw) {
 
     // 颜色：优先 fill，回退 color / stroke（旧实现部分类型用 stroke 承载颜色）
     if (shape.fill == null || shape.fill === '') {
-        shape.fill = shape.color ?? shape.stroke ?? '#ff0000';
+        shape.fill = shape.color ?? shape.stroke ?? '#2563eb';
     }
     // 删除冗余的 color 别名，避免历史快照里出现重复来源
     delete shape.color;
@@ -197,6 +211,12 @@ export function normalizeOption(raw) {
     const rawBackgroundAlign = raw.backgroundAlign ?? rawBackground?.align ?? raw.frameConf?.background?.align;
     out.backgroundMode = BACKGROUND_MODES.includes(rawBackgroundMode) ? rawBackgroundMode : base.backgroundMode;
     out.backgroundAlign = BACKGROUND_ALIGNS.includes(rawBackgroundAlign) ? rawBackgroundAlign : base.backgroundAlign;
+    const definition = getBackgroundDefinition(out.background);
+    const rawGradientAngle = raw.backgroundGradientAngle ?? rawBackground?.gradientAngle;
+    out.backgroundGradientAngle = normalizeGradientAngle(
+        rawGradientAngle,
+        getGradientPresetAngle(definition)
+    );
     const rotation = Number(raw.rotation);
     out.rotation = Number.isFinite(rotation) ? Math.max(-180, Math.min(180, rotation)) : base.rotation;
     const offsetX = Number(raw.offsetX);
@@ -233,7 +253,6 @@ export function normalizeOption(raw) {
     } else {
         out.frameConf.background = getBackgroundDefinition(out.background)?.fill ?? base.frameConf.background;
     }
-    const definition = getBackgroundDefinition(out.background);
     if ((definition?.type === 'builtin-image' || definition?.type === 'upload-image') && out.frameConf.background?.type === 'image') {
         out.frameConf.background = {
             ...out.frameConf.background,
