@@ -25,7 +25,7 @@ const toolLabels = {
     Smile: '表情',
 };
 
-export default observer(() => {
+export default observer(function BottomToolbar() {
     const [isMove, setIsMove] = useState(false);
     const selectTool = (type) => {
         if (!stores.editor.isEditing) return;

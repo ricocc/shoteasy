@@ -12,6 +12,7 @@
  * size（数字）通过外层 span 的内联宽高承载，内部 svg 以 w-full/h-full 撑满，
  * CSS 覆盖 svg 固定的 width/height 属性；aria-hidden 与事件透传到外层 span。
  */
+/* eslint-disable react-refresh/only-export-components -- default 导出是命名空间对象（<Icon.X />，M2.9 锁定的适配层 API），非单组件文件 */
 import { cn } from '@utils/utils';
 
 // --- mage-icons-react（stroke 集，default 导出）---

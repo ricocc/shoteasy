@@ -7,7 +7,7 @@ import stores from '@stores';
 
 const cols = ['top-left', 'top', 'top-right', 'left', 'center', 'right', 'bottom-left', 'bottom', 'bottom-right'];
 
-export default observer(() => {
+export default observer(function Position() {
     const [open, setOpen] = useState(false);
     const handleSelect = (value) => {
         stores.option.setAlign(value);

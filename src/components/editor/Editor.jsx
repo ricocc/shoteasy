@@ -9,7 +9,7 @@ import stores from '@stores';
 import useSetImg from '@hooks/useSetImg';
 import useImageDrop from '@hooks/useImageDrop';
 
-export default observer(() => {
+export default observer(function Editor() {
     const [target, setTarget] = useState(null);
     const getFile = useSetImg(stores);
     const handleDropFile = async (file) => getFile(file, 'blob', { replace: true });

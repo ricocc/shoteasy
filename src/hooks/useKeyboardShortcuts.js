@@ -25,4 +25,4 @@ export default function useKeyboardShortcuts(toSave, toCopy, dependencies) {
             unsubscribe();
         }
     }, [window]);
-};
+}

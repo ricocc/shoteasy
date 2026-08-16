@@ -8,7 +8,7 @@ import { supportImg, toDownloadFile, nanoid, modKey } from '@utils/utils';
 import useKeyboardShortcuts from '@hooks/useKeyboardShortcuts';
 import useSetImg from '@hooks/useSetImg';
 
-export default observer(() => {
+export default observer(function DownloadBar() {
     const [loading, setLoading] = useState(false);
     const [open, setOpen] = useState(false);
     const [format, setFormat] = useState('png');
@@ -37,7 +37,7 @@ export default observer(() => {
         stores.editor.message.open({ key, type: 'loading', content: '正在下载…' });
         try {
             const result = await stores.editor.app.tree.export(format, option);
-            let name = 'ShotEasy';
+            let name = 'RicoScreenshot';
             if (ratio > 1) name += `@${ratio}`;
             await toDownloadFile(result.data, `${name}.${format}`);
             stores.editor.message.open({ key, type: 'success', content: '下载成功' });
@@ -92,7 +92,7 @@ export default observer(() => {
                 {stores.option.frameConf.width && (
                     <div className="text-xs p-3 mt-4 flex justify-between bg-[var(--se-panel-muted)] rounded-lg">
                         <span className="text-[var(--se-muted)]">导出尺寸</span>
-                        <span className="font-medium text-[var(--se-ink)]">
+                        <span className="font-medium text-[var(--se-ink)]" style={{ fontFamily: 'var(--font-mono)', fontVariantNumeric: 'tabular-nums' }}>
                             {stores.option.frameConf.width * ratio} × {stores.option.frameConf.height * ratio}
                         </span>
                     </div>
@@ -107,7 +107,7 @@ export default observer(() => {
                 theme={{
                     components: {
                         Button: {
-                            colorPrimary: stores.editor.isDark ? '#6272f5' : '#2563eb',
+                            colorPrimary: stores.editor.isDark ? '#0099ff' : '#2563eb',
                             algorithm: true,
                         },
                     },
@@ -163,13 +163,16 @@ export default observer(() => {
                     overlayStyle={{ width: '320px' }}
                     onOpenChange={setOpen}
                 >
-                    <Button
-                        size="middle"
-                        className="shoteasy-top-action"
-                        disabled={!hasImage}
-                        icon={<Icon.Settings2 size={17} />}
-                        aria-label="导出设置"
-                    />
+                    <Tooltip placement="bottom" arrow={false} title="导出格式与倍率">
+                        <Button
+                            size="middle"
+                            className="shoteasy-top-action shoteasy-top-action--export"
+                            disabled={!hasImage}
+                            aria-label={`导出格式与倍率（当前 ${ratio}x ${format.toUpperCase()}）`}
+                        >
+                            {ratio}x · {format.toUpperCase()}
+                        </Button>
+                    </Tooltip>
                 </Popover>
                 {hasImage && (
                     <Popconfirm

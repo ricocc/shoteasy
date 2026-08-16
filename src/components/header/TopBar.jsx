@@ -9,7 +9,7 @@ import { InspectorContent } from '@components/sideBar/RightInspector';
 import Logo from './Logo';
 import MediaLogo from './MediaLogo';
 
-export default observer(({ headLeft, headRight }) => {
+export default observer(function TopBar({ headLeft, headRight }) {
     const [mobileLeft, setMobileLeft] = useState(false);
     const [mobileInspector, setMobileInspector] = useState(false);
 
@@ -53,12 +53,12 @@ export default observer(({ headLeft, headRight }) => {
 
             <div className="shoteasy-mobile-actions">
                 <Divider type="vertical" className="shoteasy-topbar__divider" />
-                <Tooltip placement="bottom" arrow={false} title="尺寸、外框与布局">
+                <Tooltip placement="bottom" arrow={false} title="尺寸、外框与 3D 旋转">
                     <Button
                         type="text"
                         shape="circle"
                         className="shoteasy-icon-button"
-                        aria-label="打开尺寸、外框与布局"
+                        aria-label="打开尺寸、外框与 3D 旋转"
                         icon={<Icon.LayoutGrid size={16} />}
                         onClick={() => setMobileLeft(true)}
                     />
@@ -96,7 +96,7 @@ export default observer(({ headLeft, headRight }) => {
             </div>
 
             <Drawer
-                title="尺寸、外框与布局"
+                title="尺寸、外框与 3D 旋转"
                 placement="left"
                 open={mobileLeft}
                 onClose={() => setMobileLeft(false)}

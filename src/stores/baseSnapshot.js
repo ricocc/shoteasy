@@ -35,6 +35,8 @@ function computeRevision(editor) {
         align: o.align,
         frame: o.frame,
         frameMode: o.frameMode,
+        browserUrl: o.browserUrl,
+        browserHeaderSize: o.browserHeaderSize,
         bg: o.frameConf?.background,
         width: o.frameConf?.width,
         height: o.frameConf?.height,

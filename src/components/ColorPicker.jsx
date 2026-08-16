@@ -2,7 +2,7 @@ import { ColorPicker, Button } from 'antd';
 import { TinyColor } from '@ctrl/tinycolor';
 import Icon from '@components/Icon';
 
-export default (props) => {
+export default function ColorPickerWithDropper(props) {
     const useDropper = () => {
         const EyeDropperCtor = window.EyeDropper;
         if (!EyeDropperCtor) return;
@@ -23,4 +23,4 @@ export default (props) => {
             </>
         )}
     />
-};
+}

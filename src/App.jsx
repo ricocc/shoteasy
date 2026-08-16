@@ -14,7 +14,7 @@ import draftService from '@stores/draftService';
 import { cn } from '@utils/utils';
 import '@style/main.css';
 
-export default observer(({ defaultImg, headLeft, headRight, isDark, boxClassName = '', onClear, persistence = false }) => {
+export default observer(function App({ defaultImg, headLeft, headRight, isDark, boxClassName = '', onClear, persistence = false }) {
   const getFile = useSetImg(stores);
   const isEditing = !!stores.editor.img?.src;
   const workplace = isEditing ? <Editor /> : <Init />
@@ -56,7 +56,6 @@ export default observer(({ defaultImg, headLeft, headRight, isDark, boxClassName
       draftService.restore();
     }
     // defaultImg 只决定首次挂载时是否跳过恢复，后续变化不应再次触发恢复。
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [persistenceKey, persistenceAutoRestore]);
   return (
     <StyleProvider>
@@ -64,15 +63,16 @@ export default observer(({ defaultImg, headLeft, headRight, isDark, boxClassName
         theme={{
           algorithm: stores.editor.isDark ? theme.darkAlgorithm : theme.defaultAlgorithm,
           token: {
-            colorPrimary: stores.editor.isDark ? '#7180ff' : '#2563eb',
-            borderRadius: 9,
+            // design.md：暗色唯一强调色为电光蓝 #0099ff；亮色保持原蓝色
+            colorPrimary: stores.editor.isDark ? '#0099ff' : '#2563eb',
+            borderRadius: 8,
             controlHeight: 34,
             fontFamily: 'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
           },
           components: {
             Button: {
               controlHeight: 34,
-              paddingInline: 12,
+              paddingInline: 14,
             },
             Segmented: {
               borderRadius: 8,

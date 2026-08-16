@@ -14,7 +14,7 @@ const BACKGROUND_POSITIONS = [
     ['bottom-left', '左下'], ['bottom', '下'], ['bottom-right', '右下'],
 ];
 
-export default observer(({ showMore, onChange }) => {
+export default observer(function DrawerBar({ showMore, onChange }) {
     const onMoreClose = () => {
         onChange(false);
     }

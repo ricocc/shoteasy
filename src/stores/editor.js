@@ -175,6 +175,19 @@ class Editor {
         this._destroyTimer = null;
     }
 
+    /**
+     * 仅销毁当前 Leafer App（画布及其 DOM view），保留 shapes、图片、背景与快照等编辑状态。
+     * View 重新挂载（React StrictMode 模拟 cleanup 后的 setup）时调用：
+     * 旧 app 的 view 若不销毁会残留在容器里占据布局流，把新 app 挤出视口，
+     * 指针事件全部落在已废弃的 view 上（表现为无法绘制/选中标注，仅 dev 模式出现）。
+     */
+    destroyApp() {
+        this.app?.destroy(true);
+        this.app = null;
+        this.selectedId = null;
+        this.setUseTool(null);
+    }
+
     setMessage(value) {
         this.message = value;
     }

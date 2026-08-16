@@ -7,7 +7,7 @@ import Cropper from "react-cropper";
 import { getMargin } from "@utils/utils";
 import "cropperjs/dist/cropper.css";
 
-export default observer(() => {
+export default observer(function CropperImage() {
     const cropperRef = useRef(null);
     const [isModalOpen, setIsModalOpen] = useState(false);
     const handleCrop = () => {

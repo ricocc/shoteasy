@@ -6,9 +6,9 @@ import ColorPicker from '@components/ColorPicker';
 import stores from '@stores';
 import { text2Svg } from '@utils/utils';
 
-export default observer(() => {
+export default observer(function WatermarkPanel() {
     const [useWater, setUseWater] = useState(false);
-    const [waterCont, setWaterCont] = useState('ShotEasy');
+    const [waterCont, setWaterCont] = useState('RicoScreenshot');
     const [waterColor, setWaterColor] = useState('#00000030');
     const [direction, setDirection] = useState(45);
     const handleColorChange = (color) => {

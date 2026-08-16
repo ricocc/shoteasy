@@ -3,17 +3,17 @@ import { tinykeys } from "tinykeys"
 import { observer } from 'mobx-react-lite';
 import stores from '@stores';
 
-export default observer(() => {
+export default observer(function HotKeys() {
     useEffect(() => {
-        const deleteItem = event => {
-            // event.preventDefault();
-            const { list } = stores.editor.app?.editor;
+        const deleteItem = () => {
+            const editorTarget = stores.editor.app?.editor;
+            const list = editorTarget?.list;
             if (list?.length) {
                 for (let item of list) {
                     item.remove();
                     stores.editor.removeShape(item);
                 }
-                stores.editor.app.editor.cancel();
+                editorTarget?.cancel();
                 stores.history.commit();
             }
         };

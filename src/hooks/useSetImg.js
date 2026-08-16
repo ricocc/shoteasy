@@ -20,7 +20,7 @@ export default (stores) => {
             width,
             height,
             type: type === 'blob' ? file.type : 'image/png',
-            name: type === 'blob' ? file.name : 'ShotEasy.png'
+            name: type === 'blob' ? file.name : 'RicoScreenshot.png'
         };
         if (options.replace) {
             stores.editor.replaceImg(nextImage);

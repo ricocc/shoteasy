@@ -3,7 +3,7 @@ import { observer } from 'mobx-react-lite';
 import { Rect } from 'leafer-ui';
 import stores from '@stores';
 
-export default observer(({ parent }) => {
+export default observer(function Watermark({ parent }) {
     const rect = useMemo(() => {
         const rect = new Rect({
             x: 0,

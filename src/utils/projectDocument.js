@@ -51,6 +51,37 @@ export const SHAPE_TYPES = [
 const NUMERIC_FIELDS = ['x', 'y', 'width', 'height', 'strokeWidth', 'zIndex', 'rotation', 'scaleX', 'scaleY'];
 
 /**
+ * 阴影完整配置 { visible, x, y, blur, spread, color }。
+ * 由旧的 0-6 强度档位换算（x=y=n*4、blur=n*3、#00000045），保持旧版本视觉不变。
+ */
+export function shadowFromIntensity(n) {
+    const v = Number(n);
+    if (!Number.isFinite(v) || v <= 0) {
+        return { visible: false, x: 0, y: 12, blur: 24, spread: 0, color: '#00000045' };
+    }
+    return { visible: true, x: Math.round(v * 4), y: Math.round(v * 4), blur: Math.round(v * 3), spread: 0, color: '#00000045' };
+}
+
+/** 规范化阴影配置：兼容旧版 number 档位、缺字段补默认（默认档 = 旧 shadow:3）。 */
+export function normalizeShadow(raw) {
+    if (typeof raw === 'number') return shadowFromIntensity(raw);
+    const base = shadowFromIntensity(3);
+    if (!raw || typeof raw !== 'object') return base;
+    const num = (v, fallback) => {
+        const n = Number(v);
+        return Number.isFinite(n) ? n : fallback;
+    };
+    return {
+        visible: raw.visible !== false,
+        x: num(raw.x, base.x),
+        y: num(raw.y, base.y),
+        blur: Math.max(0, num(raw.blur, base.blur)),
+        spread: num(raw.spread, 0),
+        color: typeof raw.color === 'string' && raw.color ? raw.color : base.color,
+    };
+}
+
+/**
  * 默认 option 快照。与 stores/option.js 的类字段保持一致；
  * 两者都是 V1 锁定的默认值，改动任一处时需同步。
  */
@@ -63,9 +94,11 @@ export function defaultOption() {
         padding: 0,
         paddingBg: 'rgba(255,255,255, 100)',
         round: 10,
-        shadow: 3,
+        shadow: shadowFromIntensity(3),
         frame: 'none',
         frameMode: 'cover',
+        browserUrl: 'shoteasy.app',
+        browserHeaderSize: 100,
         background: 'default_1',
         backgroundAssetId: null,
         backgroundMode: 'cover',
@@ -164,6 +197,10 @@ export function normalizeOption(raw) {
     out.backgroundAlign = BACKGROUND_ALIGNS.includes(rawBackgroundAlign) ? rawBackgroundAlign : base.backgroundAlign;
     const rotation = Number(raw.rotation);
     out.rotation = Number.isFinite(rotation) ? Math.max(-180, Math.min(180, rotation)) : base.rotation;
+    // 3D 旋转（rotationX/rotationY/perspective）功能已移除：剥离旧草稿中的残留字段
+    delete out.rotationX;
+    delete out.rotationY;
+    delete out.perspective;
     const blur = Number(raw.backgroundBlur);
     out.backgroundBlur = Number.isFinite(blur) ? Math.max(0, Math.min(30, blur)) : base.backgroundBlur;
     const maskOpacity = Number(raw.backgroundMaskOpacity);
@@ -171,7 +208,16 @@ export function normalizeOption(raw) {
     const noise = Number(raw.backgroundNoise);
     out.backgroundNoise = Number.isFinite(noise) ? Math.max(0, Math.min(1, noise)) : base.backgroundNoise;
     out.backgroundMaskColor = (typeof raw.backgroundMaskColor === 'string' && raw.backgroundMaskColor) ? raw.backgroundMaskColor : base.backgroundMaskColor;
+    out.browserUrl = typeof raw.browserUrl === 'string'
+        ? raw.browserUrl.trim().slice(0, 160)
+        : base.browserUrl;
+    const browserHeaderSize = Number(raw.browserHeaderSize);
+    out.browserHeaderSize = Number.isFinite(browserHeaderSize)
+        ? Math.max(50, Math.min(200, Math.round(browserHeaderSize)))
+        : base.browserHeaderSize;
     out.size = { ...base.size, ...(raw.size || {}) };
+    // 阴影：旧文档/旧 store 存的是 0-6 number，统一迁移为完整配置对象
+    out.shadow = normalizeShadow(raw.shadow);
     out.frameConf = { ...base.frameConf, ...(raw.frameConf || {}) };
     const rawFill = raw.frameConf?.background ?? (rawBackground && typeof rawBackground === 'object' ? rawBackground.fill : undefined);
     if (out.background === 'none' && rawFill == null) {

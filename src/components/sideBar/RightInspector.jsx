@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import Icon from '@components/Icon';
-import { Button, Slider, Radio, Segmented } from 'antd';
+import { Button, Slider, Radio, Segmented, InputNumber, Switch } from 'antd';
 import ColorPicker from '@components/ColorPicker';
 import stores from '@stores';
 import backgroundConfig from '@utils/backgroundConfig';
@@ -32,6 +32,63 @@ function Section({ title, defaultOpen = true, children }) {
             </button>
             {open && <div id={sectionId} className="shoteasy-inspector-section__body [&_label]:font-semibold [&_label]:text-sm">{children}</div>}
         </section>
+    );
+}
+
+/**
+ * 滑杆 + 手动输入组合行：label 左、InputNumber 右、Slider 占满下方。
+ * 滑杆受 max 限制，输入框可用 inputMax 放开更大的手动写入范围。
+ */
+function SliderRow({ label, min, max, step = 1, value, onChange, inputMax, inputMin, extra, disabled }) {
+    return (
+        <div className="pb-3">
+            <div className="flex justify-between items-center gap-2">
+                <label>{label}</label>
+                <div className="flex items-center gap-2">
+                    {extra}
+                    <InputNumber
+                        size="small"
+                        min={inputMin ?? min}
+                        max={inputMax ?? max}
+                        step={step}
+                        value={typeof value === 'number' ? value : min}
+                        disabled={disabled}
+                        onChange={(v) => onChange(Number.isFinite(v) ? v : (inputMin ?? min))}
+                        className="w-[64px]"
+                        style={{ fontFamily: 'var(--font-mono)' }}
+                        aria-label={`${label}数值`}
+                    />
+                </div>
+            </div>
+            <Slider
+                min={min}
+                max={max}
+                step={step}
+                value={typeof value === 'number' ? value : min}
+                onChange={onChange}
+                disabled={disabled}
+                className="ml-0 mr-1"
+            />
+        </div>
+    );
+}
+
+/** 阴影等紧凑数值字段：小标签 + 手动输入，两列网格排布。 */
+function ShadowField({ label, value, min, max, onChange }) {
+    return (
+        <label className="flex items-center justify-between gap-1 py-1">
+            <span className="text-xs text-[var(--se-muted)]">{label}</span>
+            <InputNumber
+                size="small"
+                min={min}
+                max={max}
+                value={value}
+                onChange={(v) => onChange(Number.isFinite(v) ? v : min)}
+                className="w-[68px]"
+                style={{ fontFamily: 'var(--font-mono)' }}
+                aria-label={label}
+            />
+        </label>
     );
 }
 
@@ -117,16 +174,15 @@ export const InspectorContent = observer(() => {
                             value={typeof stores.option.scale === 'number' ? stores.option.scale : 1}
                         />
                     </div>
-                    <div className="pb-3">
-                        <div className="flex justify-between">
-                            <label>内边距</label>
-                            <ColorPicker value={stores.option.paddingBg} onChange={(e) => stores.option.setPaddingBg(e.toRgbString())} size="small" />
-                        </div>
-                        <Slider
+                    <div className="pb-1">
+                        <SliderRow
+                            label="内边距"
                             min={0}
-                            max={60}
+                            max={200}
+                            value={stores.option.padding}
                             onChange={(e) => stores.option.setPadding(e)}
-                            value={typeof stores.option.padding === 'number' ? stores.option.padding : 0}
+                            inputMax={500}
+                            extra={<ColorPicker value={stores.option.paddingBg} onChange={(e) => stores.option.setPaddingBg(e.toRgbString())} size="small" aria-label="内边距颜色" />}
                         />
                     </div>
                     <div className="pb-3">
@@ -164,23 +220,43 @@ export const InspectorContent = observer(() => {
                             </div>
                         </div>
                     )}
-                    <div className="pb-3">
-                        <label>圆角</label>
-                        <Slider
+                    <div className="pb-1">
+                        <SliderRow
+                            label="圆角"
                             min={0}
-                            max={20}
+                            max={100}
+                            value={stores.option.round}
                             onChange={(e) => stores.option.setRound(e)}
-                            value={typeof stores.option.round === 'number' ? stores.option.round : 0}
+                            inputMax={999}
                         />
                     </div>
                     <div className="pb-3">
-                        <label>阴影</label>
-                        <Slider
-                            min={0}
-                            max={6}
-                            onChange={(e) => stores.option.setShadow(e)}
-                            value={typeof stores.option.shadow === 'number' ? stores.option.shadow : 0}
-                        />
+                        <div className="flex justify-between items-center gap-2">
+                            <label>阴影</label>
+                            <div className="flex items-center gap-2">
+                                <ColorPicker
+                                    value={stores.option.shadow?.color}
+                                    onChange={(e) => stores.option.setShadowConf({ color: e.toRgbString() })}
+                                    size="small"
+                                    disabled={!stores.option.shadow?.visible}
+                                    aria-label="阴影颜色"
+                                />
+                                <Switch
+                                    size="small"
+                                    checked={!!stores.option.shadow?.visible}
+                                    onChange={(v) => stores.option.setShadowConf({ visible: v })}
+                                    aria-label="启用阴影"
+                                />
+                            </div>
+                        </div>
+                        {stores.option.shadow?.visible && (
+                            <div className="grid grid-cols-2 gap-x-3 pt-1">
+                                <ShadowField label="偏移 X" min={-200} max={200} value={stores.option.shadow.x} onChange={(v) => stores.option.setShadowConf({ x: v })} />
+                                <ShadowField label="偏移 Y" min={-200} max={200} value={stores.option.shadow.y} onChange={(v) => stores.option.setShadowConf({ y: v })} />
+                                <ShadowField label="模糊" min={0} max={400} value={stores.option.shadow.blur} onChange={(v) => stores.option.setShadowConf({ blur: v })} />
+                                <ShadowField label="扩展" min={-100} max={200} value={stores.option.shadow.spread} onChange={(v) => stores.option.setShadowConf({ spread: v })} />
+                            </div>
+                        )}
                     </div>
                 </Section>
 

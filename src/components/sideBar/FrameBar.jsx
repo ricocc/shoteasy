@@ -1,81 +1,151 @@
 import { useMemo, useState } from 'react';
 import { observer } from 'mobx-react-lite';
 import Icon from '@components/Icon';
-import { Button, Radio, Drawer } from 'antd';
+import { Button, Drawer, Input, Segmented, Slider } from 'antd';
 import stores from '@stores';
 import { cn } from '@utils/utils';
-import { DEVICE_FRAME_INFO, getFrameDefinition, getFrameGroups, isDeviceFrame } from '@utils/frameConfig';
+import {
+    BROWSER_HEADER_SIZE_MAX,
+    BROWSER_HEADER_SIZE_MIN,
+    DEVICE_FRAME_INFO,
+    getFrameDefinition,
+    getFrameGroups,
+    isDeviceFrame,
+} from '@utils/frameConfig';
 
 const frameThumbStyle = (frame) => {
     const definition = getFrameDefinition(frame);
-    const styles = {
-        none: { background: 'rgba(148,163,184,.18)' },
-        light: { background: 'rgba(148,163,184,.18)', border: '2px solid rgba(255,255,255,.9)' },
-        dark: { background: 'rgba(148,163,184,.18)', border: '2px solid rgba(15,23,42,.65)' },
-        card: { background: '#fff', borderRadius: 7, boxShadow: '0 3px 7px #0003' },
-        stack: { background: '#fff', borderRadius: 7, boxShadow: '5px 4px 0 #dbe2ea, 0 3px 7px #0003' },
-        stack2: { background: '#fff', borderRadius: 7, boxShadow: '8px 6px 0 #dbe2ea, 5px 4px 0 #eef2f7, 0 3px 7px #0003' },
-        'glass-light': { background: '#ffffffaa', border: '1px solid #fff', borderRadius: 7, boxShadow: '0 3px 9px #64748b55' },
-        'glass-dark': { background: '#111827cc', border: '1px solid #fff6', borderRadius: 7, boxShadow: '0 3px 9px #0005' },
-        polaroid: { background: '#fff', borderRadius: 3, boxShadow: '0 3px 7px #0003', paddingBottom: 5 },
-        'mac-light': { background: 'linear-gradient(#fff 0 25%, #cbd5e1 25%)', borderRadius: 4, boxShadow: '0 3px 7px #0003' },
-        'mac-dark': { background: 'linear-gradient(#202124 0 25%, #64748b 25%)', borderRadius: 4, boxShadow: '0 3px 7px #0003' },
-        'windows-light': { background: 'linear-gradient(#fff 0 25%, #cbd5e1 25%)', borderRadius: 4, boxShadow: '0 3px 7px #0003' },
-        'windows-dark': { background: 'linear-gradient(#202124 0 25%, #64748b 25%)', borderRadius: 4, boxShadow: '0 3px 7px #0003' },
-        arc: { background: 'linear-gradient(#e5e7eb 0 25%, #f6f7fb 25%)', border: '1px solid #cbd5e1', borderRadius: 5 },
-    };
     if (definition.kind === 'device') {
         return { backgroundImage: `url(${DEVICE_FRAME_INFO[frame].image})`, backgroundPosition: 'center', backgroundRepeat: 'no-repeat', backgroundSize: 'contain' };
     }
-    return styles[definition.thumbnail] || styles.none;
+    return undefined;
 };
 
-const FrameThumb = ({ frame, large = false }) => {
+const FrameThumb = ({ frame, compact = false }) => {
     const definition = getFrameDefinition(frame);
+    const browserLike = definition.kind === 'browser' || definition.kind === 'arc';
     return (
-        <div className={cn('flex w-full items-center justify-center rounded-md bg-slate-400/10 px-2 py-1', large ? 'h-16' : 'h-9')}>
-            <div className="relative h-full w-[82%]" style={frameThumbStyle(frame)}>
-                {(definition.kind === 'browser' || definition.kind === 'arc') && <div className="absolute left-1 top-1 flex gap-0.5"><i className="h-1 w-1 rounded-full bg-red-400" /><i className="h-1 w-1 rounded-full bg-yellow-400" /><i className="h-1 w-1 rounded-full bg-green-400" /></div>}
+        <div
+            className={cn('shoteasy-frame-thumb', compact && 'is-compact')}
+            data-kind={definition.kind}
+            data-thumb={definition.thumbnail}
+            aria-hidden="true"
+        >
+            <div className="shoteasy-frame-thumb__surface" style={frameThumbStyle(frame)}>
+                {browserLike && (
+                    <span className="shoteasy-frame-thumb__traffic">
+                        <i /><i /><i />
+                    </span>
+                )}
+                {browserLike && <span className="shoteasy-frame-thumb__address" />}
             </div>
         </div>
     );
 };
 
-const FrameOption = ({ frame, large = false }) => {
+const FrameOption = ({ frame, selected, onSelect, compact = false, name }) => {
     const definition = getFrameDefinition(frame);
     return (
-        <Radio value={frame} aria-label={definition.title} className="[&_.ant-radio]:hidden [&_span]:mr-0 [&_span]:block [&_span]:w-full">
-            <div className="space-y-1 text-center">
-                <FrameThumb frame={frame} large={large} />
-                <div className="truncate text-[11px]">{definition.title}</div>
+        <label className={cn('shoteasy-frame-option', selected && 'is-selected')}>
+            <input
+                type="radio"
+                name={name}
+                value={frame}
+                checked={selected}
+                onChange={() => onSelect(frame)}
+            />
+            <div className="shoteasy-frame-option__content">
+                <FrameThumb frame={frame} compact={compact} />
+                <span>{definition.title}</span>
+                {!compact && definition.description && <small>{definition.description}</small>}
             </div>
-        </Radio>
+        </label>
     );
 };
 
-export default observer(() => {
+const BrowserFrameSettings = ({ url, headerSize }) => (
+    <div className="shoteasy-browser-frame-settings">
+        <div className="shoteasy-browser-frame-settings__title">浏览器设置</div>
+        <label htmlFor="browser-frame-url">URL</label>
+        <Input
+            id="browser-frame-url"
+            value={url}
+            maxLength={160}
+            placeholder="example.com"
+            onChange={(event) => stores.option.setBrowserUrl(event.target.value, { commit: false })}
+            onBlur={(event) => stores.option.setBrowserUrl(event.target.value)}
+            onPressEnter={(event) => event.currentTarget.blur()}
+            aria-label="浏览器地址栏 URL"
+        />
+        <div className="shoteasy-browser-frame-settings__slider-heading">
+            <label htmlFor="browser-header-size">顶部尺寸</label>
+            <output htmlFor="browser-header-size">{headerSize}%</output>
+        </div>
+        <Slider
+            id="browser-header-size"
+            min={BROWSER_HEADER_SIZE_MIN}
+            max={BROWSER_HEADER_SIZE_MAX}
+            value={headerSize}
+            onChange={(value) => stores.option.setBrowserHeaderSize(value, { commit: false })}
+            onChangeComplete={(value) => stores.option.setBrowserHeaderSize(value)}
+            aria-label="浏览器顶部尺寸"
+        />
+    </div>
+);
+
+export default observer(function FrameBar() {
     const [showMore, setShowMore] = useState(false);
-    const groups = useMemo(() => getFrameGroups(), []);
+    const groups = useMemo(() => {
+        const priority = { browser: 0, basic: 1, creative: 2, device: 3 };
+        return getFrameGroups().sort((a, b) => priority[a.id] - priority[b.id]);
+    }, []);
+    const browserFrames = groups.find((group) => group.id === 'browser')?.items || [];
     const selectFrame = (value) => {
         stores.option.setFrame(value);
         if (value === 'macbookpro16') stores.option.setPaddingBg('#000000');
     };
     const device = isDeviceFrame(stores.option.frame);
+    const selectedFrame = getFrameDefinition(stores.option.frame);
+    const browserSelected = selectedFrame.kind === 'browser' || selectedFrame.kind === 'arc';
     return (
         <>
-            <div className="shoteasy-frame-panel [&_label]:font-semibold [&_label]:text-sm">
-                <div className="flex items-center justify-between">
-                    <label>外框</label>
-                    <Button type="text" size="small" className="m-0 flex items-center text-xs opacity-80" onClick={() => setShowMore(true)}>全部外框 <Icon.ChevronRight size={16} /></Button>
+            <section className="shoteasy-frame-panel" aria-labelledby="frame-panel-title">
+                <div className="shoteasy-frame-panel__heading">
+                    <div>
+                        <h2 id="frame-panel-title">外框</h2>
+                        <span>当前：{selectedFrame.title}</span>
+                    </div>
+                    <Button type="text" size="small" onClick={() => setShowMore(true)}>
+                        查看全部 <Icon.ChevronRight size={14} />
+                    </Button>
                 </div>
-                <div className="py-3 [&_.ant-radio-wrapper_span]:p-0 [&_.ant-radio-wrapper_span]:px-1">
-                    <Radio.Group rootClassName="grid grid-cols-3" onChange={(event) => selectFrame(event.target.value)} value={stores.option.frame}>
-                        {groups.find((group) => group.id === 'basic')?.items.slice(0, 6).map((item) => <FrameOption key={item.id} frame={item.id} />)}
-                    </Radio.Group>
+                <div className="shoteasy-frame-panel__subheading">浏览器外框</div>
+                <div className="shoteasy-frame-grid is-quick" role="radiogroup" aria-label="常用浏览器外框">
+                    {browserFrames.map((item) => (
+                        <FrameOption
+                            key={item.id}
+                            frame={item.id}
+                            name="quick-frame"
+                            compact
+                            selected={stores.option.frame === item.id}
+                            onSelect={selectFrame}
+                        />
+                    ))}
                 </div>
-            </div>
+                {browserSelected && (
+                    <BrowserFrameSettings
+                        url={stores.option.browserUrl}
+                        headerSize={stores.option.browserHeaderSize}
+                    />
+                )}
+            </section>
             <Drawer
-                title="全部外框"
+                title={
+                    <div className="shoteasy-frame-drawer__title">
+                        <span>选择外框</span>
+                        <small>{selectedFrame.title}</small>
+                    </div>
+                }
                 placement="right"
                 closable
                 mask={false}
@@ -83,27 +153,42 @@ export default observer(() => {
                 open={showMore}
                 getContainer={false}
                 width="100%"
+                rootClassName="shoteasy-frame-drawer-shell"
                 className="[&_.ant-drawer-body]:p-0"
             >
-                <div className="shoteasy-frame-drawer h-full overflow-y-auto px-4 py-3">
+                <div className="shoteasy-frame-drawer">
                     {groups.map((group) => (
-                        <section key={group.id} className="border-b border-gray-200 py-2 last:border-0 dark:border-gray-700">
-                            <div className="flex items-center justify-between">
-                                <h4 className="py-2 text-sm font-bold">{group.title}</h4>
+                        <section key={group.id} className="shoteasy-frame-section" aria-labelledby={`frame-group-${group.id}`}>
+                            <div className="shoteasy-frame-section__heading">
+                                <h3 id={`frame-group-${group.id}`}>{group.title}</h3>
                                 {group.id === 'device' && (
-                                    <Radio.Group value={stores.option.frameMode} onChange={(event) => stores.option.setFrameMode(event.target.value)} size="small" aria-label="设备图片适配方式">
-                                        <Radio.Button value="cover">覆盖</Radio.Button>
-                                        <Radio.Button value="fit">包含</Radio.Button>
-                                        <Radio.Button value="strench">拉伸</Radio.Button>
-                                    </Radio.Group>
+                                    <Segmented
+                                        size="small"
+                                        value={stores.option.frameMode}
+                                        onChange={(value) => stores.option.setFrameMode(value)}
+                                        options={[
+                                            { label: '覆盖', value: 'cover' },
+                                            { label: '包含', value: 'fit' },
+                                            { label: '拉伸', value: 'strench' },
+                                        ]}
+                                        aria-label="设备图片适配方式"
+                                    />
                                 )}
                             </div>
-                            <Radio.Group rootClassName="grid grid-cols-3" onChange={(event) => selectFrame(event.target.value)} value={stores.option.frame}>
-                                {group.items.map((item) => <FrameOption key={item.id} frame={item.id} large />)}
-                            </Radio.Group>
+                            <div className="shoteasy-frame-grid" role="radiogroup" aria-label={group.title}>
+                                {group.items.map((item) => (
+                                    <FrameOption
+                                        key={item.id}
+                                        frame={item.id}
+                                        name={`frame-${group.id}`}
+                                        selected={stores.option.frame === item.id}
+                                        onSelect={selectFrame}
+                                    />
+                                ))}
+                            </div>
                         </section>
                     ))}
-                    {device && <div className="pt-3 text-xs text-gray-500">设备外框当前使用：{getFrameDefinition(stores.option.frame).title}</div>}
+                    {device && <div className="shoteasy-frame-device-note">设备外框当前使用：{selectedFrame.title}</div>}
                 </div>
             </Drawer>
         </>

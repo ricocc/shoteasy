@@ -1,7 +1,6 @@
 import { makeAutoObservable, toJS, runInAction } from 'mobx';
 import { getBackgroundDefinition, normalizeBackgroundKey } from '@utils/backgroundConfig';
-import { normalizeOption } from '@utils/projectDocument';
-import { getLayoutPreset } from '@utils/layoutPresets';
+import { normalizeOption, normalizeShadow, shadowFromIntensity } from '@utils/projectDocument';
 import history from './history';
 import assetStore from './assetStore';
 
@@ -22,9 +21,12 @@ class Option {
     padding = 0;
     paddingBg = 'rgba(255,255,255, 100)';
     round = 10;
-    shadow = 3;
+    // 完整阴影配置（V1 由 0-6 强度档位迁移）；默认档 = 旧 shadow:3 的视觉
+    shadow = shadowFromIntensity(3);
     frame = 'none';
     frameMode = 'cover';
+    browserUrl = 'shoteasy.app';
+    browserHeaderSize = 100;
     background = 'default_1';
     backgroundAssetId = null;
     backgroundMode = 'cover';
@@ -86,8 +88,15 @@ class Option {
     }
 
     setShadow(value) {
-        this.shadow = value;
+        // 兼容旧调用：number 档位整体替换；对象走 setShadowConf
+        this.shadow = typeof value === 'number' ? shadowFromIntensity(value) : normalizeShadow(value);
         history.commit('slider:shadow');
+    }
+
+    /** 合并更新阴影配置的任意字段（x/y/blur/spread/color/visible），一次交互只提交一步历史。 */
+    setShadowConf(partial) {
+        this.shadow = { ...this.shadow, ...partial };
+        history.commit('shadow:conf');
     }
 
     setFrame(value) {
@@ -98,6 +107,18 @@ class Option {
     setFrameMode(value) {
         this.frameMode = value;
         history.commit();
+    }
+
+    setBrowserUrl(value, { commit = true } = {}) {
+        this.browserUrl = String(value ?? '').slice(0, 160);
+        if (commit) history.commit('browser:url');
+    }
+
+    setBrowserHeaderSize(value, { commit = true } = {}) {
+        const size = Number(value);
+        if (!Number.isFinite(size)) return;
+        this.browserHeaderSize = Math.max(50, Math.min(200, Math.round(size)));
+        if (commit) history.commit('browser:header-size');
     }
 
     setFrameSize(width, height) {
@@ -125,20 +146,6 @@ class Option {
         if (!Number.isFinite(rotation)) return;
         this.rotation = Math.max(-180, Math.min(180, rotation));
         history.commit('rotation');
-    }
-
-    /** 应用一个完整二维布局，只在操作结束时提交一次历史快照。 */
-    applyLayoutPreset(id) {
-        const preset = getLayoutPreset(id);
-        if (!preset) return false;
-        this.scale = preset.scale;
-        this.rotation = preset.rotation;
-        this.align = preset.align;
-        this.padding = preset.padding;
-        this.shadow = preset.shadow;
-        this.frame = preset.frame;
-        history.commit();
-        return true;
     }
 
     setBackground(value) {
@@ -334,6 +341,8 @@ class Option {
             shadow: this.shadow,
             frame: this.frame,
             frameMode: this.frameMode,
+            browserUrl: this.browserUrl,
+            browserHeaderSize: this.browserHeaderSize,
             background: this.background,
             backgroundAssetId: this.backgroundAssetId,
             backgroundMode: this.backgroundMode,
@@ -372,6 +381,8 @@ class Option {
             this.shadow = next.shadow;
             this.frame = next.frame;
             this.frameMode = next.frameMode;
+            this.browserUrl = next.browserUrl;
+            this.browserHeaderSize = next.browserHeaderSize;
             this.background = next.background;
             this.backgroundAssetId = next.backgroundAssetId;
             this.backgroundMode = next.backgroundMode;

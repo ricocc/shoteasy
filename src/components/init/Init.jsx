@@ -11,7 +11,7 @@ import demoPng from '@assets/demo.png';
 
 const { Dragger } = Upload;
 
-export default observer(() => {
+export default observer(function Init() {
     const getFile = useSetImg(stores);
     const beforeUpload = async (file) => {
         await getFile(file);
@@ -26,7 +26,11 @@ export default observer(() => {
     };
     const onCapture = async () => {
         const dataURL = await captureScreen();
-        if (!dataURL) return;
+        if (!dataURL) {
+            // getDisplayMedia 被拒绝或取消时给出可理解反馈（R-06），而不是静默返回。
+            stores.editor.message?.error?.('未能获取屏幕内容，请检查浏览器屏幕录制权限');
+            return;
+        }
         getFile(dataURL, 'dataURL');
     };
     const handleTry = () => {

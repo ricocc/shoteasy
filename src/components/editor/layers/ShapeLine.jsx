@@ -8,7 +8,7 @@ import baseSnapshot from '@stores/baseSnapshot';
 import stores from '@stores';
 import { blurSnapshot, mosaicSnapshot, buildSpotlightPath } from '@utils/shape/regionEffect';
 
-export default ({ parent, type, id, width, height, x, y, fill, strokeWidth, zIndex, points, editable, text, textStyle, snap, effect, rotation = 0, scaleX = 1, scaleY = 1 }) => {
+export default function ShapeLine({ parent, type, id, width, height, x, y, fill, strokeWidth, zIndex, points, editable, text, textStyle, snap, effect, rotation = 0, scaleX = 1, scaleY = 1 }) {
     const shape = useMemo(() => {
         const defaultOption = { id, x, y, zIndex }
         if (type === 'SquareFill') {
@@ -150,7 +150,6 @@ export default ({ parent, type, id, width, height, x, y, fill, strokeWidth, zInd
             //      fill=半透明遮罩色；hittable:false 不接收命中。
             //   2) hitRect：开口尺寸的透明 Rect，hittable:true，使开口可被点击选中（Group）。
             // 聚光不消费底图快照。
-            const eff = effect || {};
             const grp = new Group({ ...defaultOption, x, y, width, height });
             const overlay = new Path({ windingRule: 'evenodd', hittable: false });
             const hitRect = new Rect({

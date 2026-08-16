@@ -4,7 +4,7 @@ import Icon from '@components/Icon';
 import data from '@emoji-mart/data'
 import Picker from '@emoji-mart/react'
 
-export default ({disabled = false, toSelect, locale='en', theme='auto'}) => {
+export default function EmojiSelect({ disabled = false, toSelect, locale = 'en', theme = 'auto' }) {
     const [open, setOpen] = useState(false);
     const hide = () => {
         setOpen(false);

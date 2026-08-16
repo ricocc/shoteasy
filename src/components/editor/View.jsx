@@ -5,8 +5,7 @@ import { EditorMoveEvent, EditorScaleEvent, EditorRotateEvent, InnerEditorEvent 
 import '@leafer-in/text-editor';
 import debounce from 'lodash/debounce';
 import { addListener, removeListener } from 'resize-detector';
-import rotatePng from '@assets/rotate.png';
-import pencilPng from '@assets/pencil.png';
+import { rotateHandleUrl, pencilCursor } from '@utils/editorIconUrls';
 import stores from '@stores';
 import FrameBox from './layers/FrameBox';
 import Screenshot from './layers/Screenshot';
@@ -18,18 +17,21 @@ import HotKeys from './HotKeys';
 import '@leafer-in/view';
 import '@leafer-in/viewport';
 
-Cursor.set('pencil', { url: pencilPng });
+Cursor.set('pencil', pencilCursor);
 
-export default observer(({target}) => {
+export default observer(function View({ target }) {
     useEffect(() => {
-        // React StrictMode 会先执行一次模拟 cleanup，再重新 setup；取消上一次
-        // 延迟销毁，避免恢复中的 shapes/background 被误清空。
+        // React StrictMode 会先执行一次模拟 cleanup，再重新 setup：
+        // 1) 取消上一次调度中的完整销毁（避免恢复中的 shapes/background 被误清空）；
+        // 2) 销毁模拟 cleanup 前创建的旧 app——只清画布、保留 store 状态，
+        //    否则旧 view 残留占位，新 app 被挤出视口导致指针事件失效。
         stores.editor.cancelScheduledDestroy();
+        stores.editor.destroyApp();
         const app = new App({
             view: target,
             editor: {
                 lockRatio: 'corner',
-                stroke: '#3f99f7',
+                stroke: '#0099ff',
                 skewable: false,
                 hover: false,
                 middlePoint: { cornerRadius: 100, width: 20, height: 6 },
@@ -38,7 +40,7 @@ export default observer(({target}) => {
                     height: 20,
                     fill: {
                         type: 'image',
-                        url: rotatePng,
+                        url: rotateHandleUrl,
                     },
                 },
             },

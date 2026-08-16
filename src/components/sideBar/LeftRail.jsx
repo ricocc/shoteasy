@@ -1,17 +1,16 @@
 import { observer } from 'mobx-react-lite';
 import SizeBar from './SizeBar';
 import FrameBar from './FrameBar';
-import LayoutBar from './LayoutBar';
 
 /**
  * 左栏内容（M2.4）。桌面左栏与移动端抽屉共用。
- * 文档级设置：截图尺寸（SizeBar）、外框（FrameBar）与二维布局（LayoutBar）。
+ * 文档级设置：截图尺寸（SizeBar）与外框（FrameBar）。
+ * （视觉 3D 旋转面板已移除：透视管线与外框装饰存在兼容问题且交互卡顿。）
  */
 export const LeftRailContent = () => (
     <div className="shoteasy-rail-content flex flex-col gap-3 [&_label]:font-semibold [&_label]:text-sm">
         <SizeBar />
         <FrameBar />
-        <LayoutBar />
     </div>
 );
 

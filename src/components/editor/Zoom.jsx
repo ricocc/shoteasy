@@ -10,7 +10,7 @@ const items = [
     { key: 2, label: '200%' },
 ];
 
-export default observer(() => {
+export default observer(function Zoom() {
     const handleZoom = (key) => {
         stores.editor.app?.tree.zoom(key);
         stores.editor.setScale(stores.editor.app.tree.scale);
