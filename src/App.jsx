@@ -63,8 +63,8 @@ export default observer(function App({ defaultImg, headLeft, headRight, isDark, 
         theme={{
           algorithm: stores.editor.isDark ? theme.darkAlgorithm : theme.defaultAlgorithm,
           token: {
-            // design.md：暗色唯一强调色为电光蓝 #0099ff；亮色保持原蓝色
-            colorPrimary: stores.editor.isDark ? '#0099ff' : '#2563eb',
+            // design.md：暗色唯一强调色为电光蓝 #0066ff；亮色保持原蓝色
+            colorPrimary: stores.editor.isDark ? '#0066ff' : '#2563eb',
             borderRadius: 8,
             controlHeight: 34,
             fontFamily: 'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',

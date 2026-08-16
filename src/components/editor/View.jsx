@@ -1,11 +1,11 @@
 import { useEffect } from 'react';
 import { observer } from 'mobx-react-lite';
-import { App, ResizeEvent, ZoomEvent, DragEvent, PointerEvent, Cursor } from 'leafer-ui';
+import { App, ResizeEvent, ZoomEvent, DragEvent, PointerEvent, PropertyEvent, Rect, Cursor } from 'leafer-ui';
 import { EditorMoveEvent, EditorScaleEvent, EditorRotateEvent, InnerEditorEvent } from '@leafer-in/editor';
 import '@leafer-in/text-editor';
 import debounce from 'lodash/debounce';
 import { addListener, removeListener } from 'resize-detector';
-import { rotateHandleUrl, pencilCursor } from '@utils/editorIconUrls';
+import { closeHandleUrl, rotateHandleUrl, pencilCursor } from '@utils/editorIconUrls';
 import stores from '@stores';
 import FrameBox from './layers/FrameBox';
 import Screenshot from './layers/Screenshot';
@@ -19,6 +19,8 @@ import '@leafer-in/viewport';
 
 Cursor.set('pencil', pencilCursor);
 
+const SCREENSHOT_NODE_ID = 'screenshot-box';
+
 export default observer(function View({ target }) {
     useEffect(() => {
         // React StrictMode 会先执行一次模拟 cleanup，再重新 setup：
@@ -31,13 +33,13 @@ export default observer(function View({ target }) {
             view: target,
             editor: {
                 lockRatio: 'corner',
-                stroke: '#0099ff',
+                stroke: '#0066ff',
                 skewable: false,
                 hover: false,
                 middlePoint: { cornerRadius: 100, width: 20, height: 6 },
                 rotatePoint: {
-                    width: 20,
-                    height: 20,
+                    width: 24,
+                    height: 24,
                     fill: {
                         type: 'image',
                         url: rotateHandleUrl,
@@ -57,6 +59,112 @@ export default observer(function View({ target }) {
 
         stores.editor.setApp(app);
 
+        const closeButton = new Rect({
+            id: 'screenshot-close-control',
+            name: 'screenshot-close-control',
+            width: 24,
+            height: 24,
+            around: 'center',
+            fill: {
+                type: 'image',
+                url: closeHandleUrl,
+                mode: 'fit',
+            },
+            cursor: 'pointer',
+            hittable: true,
+            editable: false,
+            visible: false,
+        });
+        app.editor.editBox.view.add(closeButton);
+        let selectedTarget = null;
+        let closeSyncTimer = null;
+        let clearImageTimer = null;
+
+        const syncScreenshotControls = () => {
+            const selected = selectedTarget?.id === SCREENSHOT_NODE_ID;
+            closeButton.visible = selected;
+            if (!selected) return;
+            const circle = app.editor.editBox.circle;
+            closeButton.x = circle.x + 32;
+            closeButton.y = circle.y;
+        };
+
+        const scheduleScreenshotControlsSync = () => {
+            clearTimeout(closeSyncTimer);
+            closeSyncTimer = setTimeout(syncScreenshotControls, 0);
+        };
+
+        const clearCurrentImage = (event) => {
+            event?.stop?.();
+            if (selectedTarget?.id !== SCREENSHOT_NODE_ID) return;
+            // Leafer 仍需完成当前 pointer/tap 事件；延后一帧销毁 App，避免
+            // pointerup 在已移除的 view 上更新 cursor 而触发空引用。
+            clearTimeout(clearImageTimer);
+            clearImageTimer = setTimeout(() => {
+                clearImageTimer = null;
+                if (selectedTarget?.id !== SCREENSHOT_NODE_ID) return;
+                stores.editor.destroy();
+                stores.editor.clearImg();
+                stores.editor.clearFun && stores.editor.clearFun();
+            }, 0);
+        };
+        closeButton.on(PointerEvent.TAP, clearCurrentImage);
+
+        let screenshotDragStart = null;
+        const isScreenshotSelected = () => app.editor.list.length === 1 && app.editor.list[0]?.id === SCREENSHOT_NODE_ID;
+        const startScreenshotTransform = () => {
+            if (!isScreenshotSelected()) return;
+            const node = app.editor.list[0];
+            screenshotDragStart = {
+                x: node.x,
+                y: node.y,
+                width: node.width,
+                height: node.height,
+                rotation: node.rotation ?? stores.option.rotation,
+                scaleX: node.scaleX || stores.option.scale,
+                scaleY: node.scaleY || stores.option.scale,
+                scale: stores.option.scale,
+                offsetX: stores.option.offsetX,
+                offsetY: stores.option.offsetY,
+            };
+            node.cursor = 'grabbing';
+        };
+        const finishScreenshotTransform = () => {
+            if (!screenshotDragStart || !isScreenshotSelected()) {
+                screenshotDragStart = null;
+                return;
+            }
+            const node = app.editor.list[0];
+            const nextOffsetX = screenshotDragStart.offsetX + (node.x - screenshotDragStart.x);
+            const nextOffsetY = screenshotDragStart.offsetY + (node.y - screenshotDragStart.y);
+            const nextRotation = node.rotation ?? screenshotDragStart.rotation;
+            const scaleRatioX = (node.width / screenshotDragStart.width) * (node.scaleX / screenshotDragStart.scaleX);
+            const scaleRatioY = (node.height / screenshotDragStart.height) * (node.scaleY / screenshotDragStart.scaleY);
+            const nextScale = screenshotDragStart.scale * ((
+                (Number.isFinite(scaleRatioX) ? scaleRatioX : 1)
+                + (Number.isFinite(scaleRatioY) ? scaleRatioY : 1)
+            ) / 2);
+            const changed = Math.abs(nextOffsetX - screenshotDragStart.offsetX) > 0.01
+                || Math.abs(nextOffsetY - screenshotDragStart.offsetY) > 0.01
+                || Math.abs(nextRotation - screenshotDragStart.rotation) > 0.01
+                || Math.abs(nextScale - screenshotDragStart.scale) > 0.001;
+            if (changed) {
+                stores.option.setScreenshotTransform({
+                    offsetX: nextOffsetX,
+                    offsetY: nextOffsetY,
+                    rotation: nextRotation,
+                    scale: nextScale,
+                }, { commit: false });
+                stores.history.commit('image:transform');
+            }
+            node.cursor = 'grab';
+            screenshotDragStart = null;
+            scheduleScreenshotControlsSync();
+        };
+
+        app.on(DragEvent.START, startScreenshotTransform);
+        app.on(DragEvent.END, finishScreenshotTransform);
+
         app.tree.on(ZoomEvent.ZOOM, () => {
             stores.editor.setScale(app.tree.scale);
         });
@@ -66,9 +174,17 @@ export default observer(function View({ target }) {
 
         app.editor.on(EditorMoveEvent.SELECT, (event) => {
             const { list } = event;
+            if (selectedTarget) selectedTarget.off(PropertyEvent.CHANGE, syncScreenshotControls);
+            selectedTarget = list.length === 1 ? list[0] : null;
+            if (selectedTarget) selectedTarget.on(PropertyEvent.CHANGE, syncScreenshotControls);
+            scheduleScreenshotControlsSync();
             // 单选时同步选中标注 id，驱动右侧「文字」属性面板；多选/无选清空。
             stores.editor.setSelectedId(list.length === 1 ? list[0].id : null);
-            if (list.length < 2) return;
+            if (list.length < 2) {
+                app.editor.config.rotateable = true;
+                app.editor.config.lockRatio = 'corner';
+                return;
+            }
             if (list.some(e => e.tag === 'Magnifier')) {
                 app.editor.config.rotateable = false;
                 app.editor.config.lockRatio = true;
@@ -143,7 +259,7 @@ export default observer(function View({ target }) {
         app.editor.on(EditorMoveEvent.MOVE, syncSelectionGeometry);
         app.editor.on(EditorScaleEvent.SCALE, syncSelectionGeometry);
         app.editor.on(EditorRotateEvent.ROTATE, syncSelectionGeometry);
-        
+
         let shapeId = null;
         const onStart = (arg) => {
             if (!stores.editor.useTool) return;
@@ -163,7 +279,7 @@ export default observer(function View({ target }) {
             };
             if (type === 'blur') newShape.effect = { strength: 8, cornerRadius: 0 };
             else if (type === 'mosaic') newShape.effect = { blockSize: 12, cornerRadius: 0 };
-            else if (type === 'spotlight') newShape.effect = { overlayColor: '#000000', opacity: 0.5, cornerRadius: 0 };
+            else if (type === 'spotlight') newShape.effect = { overlayColor: '#ffffff', opacity: 0.5, cornerRadius: 0 };
             return newShape;
         }
         app.tree.on(PointerEvent.DOWN, (arg) => {
@@ -254,6 +370,10 @@ export default observer(function View({ target }) {
 
         return (() => {
             removeListener(target, onResize);
+            clearTimeout(closeSyncTimer);
+            clearTimeout(clearImageTimer);
+            if (selectedTarget) selectedTarget.off(PropertyEvent.CHANGE, syncScreenshotControls);
+            closeButton.remove();
             stores.editor.scheduleDestroy();
         });
     }, [target]);

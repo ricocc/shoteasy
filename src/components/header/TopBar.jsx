@@ -53,12 +53,12 @@ export default observer(function TopBar({ headLeft, headRight }) {
 
             <div className="shoteasy-mobile-actions">
                 <Divider type="vertical" className="shoteasy-topbar__divider" />
-                <Tooltip placement="bottom" arrow={false} title="尺寸、外框与 3D 旋转">
+                <Tooltip placement="bottom" arrow={false} title="尺寸与外框">
                     <Button
                         type="text"
                         shape="circle"
                         className="shoteasy-icon-button"
-                        aria-label="打开尺寸、外框与 3D 旋转"
+                        aria-label="打开尺寸与外框"
                         icon={<Icon.LayoutGrid size={16} />}
                         onClick={() => setMobileLeft(true)}
                     />
@@ -96,7 +96,7 @@ export default observer(function TopBar({ headLeft, headRight }) {
             </div>
 
             <Drawer
-                title="尺寸、外框与 3D 旋转"
+                title="尺寸与外框"
                 placement="left"
                 open={mobileLeft}
                 onClose={() => setMobileLeft(false)}

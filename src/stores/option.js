@@ -18,6 +18,8 @@ class Option {
     scaleX = false;
     scaleY = false;
     rotation = 0;
+    offsetX = 0;
+    offsetY = 0;
     padding = 0;
     paddingBg = 'rgba(255,255,255, 100)';
     round = 10;
@@ -67,9 +69,11 @@ class Option {
         return DEVICE_FRAMES.includes(this.frame) ? this.frameMode : 'cover';
     }
 
-    setScale(value) {
-        this.scale = value;
-        history.commit('slider:scale');
+    setScale(value, { commit = true } = {}) {
+        const scale = Number(value);
+        if (!Number.isFinite(scale)) return;
+        this.scale = Math.max(0.1, Math.min(3, scale));
+        if (commit) history.commit('slider:scale');
     }
 
     setPadding(value) {
@@ -131,6 +135,8 @@ class Option {
 
     setAlign(value) {
         this.align = value;
+        this.offsetX = 0;
+        this.offsetY = 0;
         history.commit();
     }
 
@@ -141,11 +147,28 @@ class Option {
         history.commit();
     }
 
-    setRotation(value) {
+    setRotation(value, { commit = true } = {}) {
         const rotation = Number(value);
         if (!Number.isFinite(rotation)) return;
         this.rotation = Math.max(-180, Math.min(180, rotation));
-        history.commit('rotation');
+        if (commit) history.commit('rotation');
+    }
+
+    setPositionOffset(offsetX, offsetY, { commit = true } = {}) {
+        const nextX = Number(offsetX);
+        const nextY = Number(offsetY);
+        if (Number.isFinite(nextX)) this.offsetX = nextX;
+        if (Number.isFinite(nextY)) this.offsetY = nextY;
+        if (commit) history.commit('image:transform');
+    }
+
+    setScreenshotTransform({ offsetX, offsetY, rotation, scale } = {}, { commit = true } = {}) {
+        if (offsetX != null || offsetY != null) {
+            this.setPositionOffset(offsetX ?? this.offsetX, offsetY ?? this.offsetY, { commit: false });
+        }
+        if (rotation != null) this.setRotation(rotation, { commit: false });
+        if (scale != null) this.setScale(scale, { commit: false });
+        if (commit) history.commit('image:transform');
     }
 
     setBackground(value) {
@@ -335,6 +358,8 @@ class Option {
             scaleX: this.scaleX,
             scaleY: this.scaleY,
             rotation: this.rotation,
+            offsetX: this.offsetX,
+            offsetY: this.offsetY,
             padding: this.padding,
             paddingBg: this.paddingBg,
             round: this.round,
@@ -375,6 +400,8 @@ class Option {
             this.scaleX = next.scaleX;
             this.scaleY = next.scaleY;
             this.rotation = next.rotation;
+            this.offsetX = next.offsetX;
+            this.offsetY = next.offsetY;
             this.padding = next.padding;
             this.paddingBg = next.paddingBg;
             this.round = next.round;

@@ -23,5 +23,6 @@ lib
 *.njsproj
 *.sln
 *.sw?
-DOCS
 Temp
+artifacts
+DOCS/*

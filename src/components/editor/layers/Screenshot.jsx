@@ -25,6 +25,28 @@ export default observer(function Screenshot({ parent }) {
             id: 'screenshot-box',
             overflow: 'hide',
             strokeAlign: 'outside',
+            editable: true,
+            hittable: true,
+            cursor: 'grab',
+            editConfig: {
+                moveable: true,
+                resizeable: true,
+                rotateable: true,
+                skewable: false,
+                circleDirection: 'top',
+                circleMargin: 14,
+                middlePoint: false,
+                point: {
+                    width: 10,
+                    height: 10,
+                    cornerRadius: 2,
+                    fill: '#ffffff',
+                    stroke: '#0066ff',
+                    strokeWidth: 2,
+                    hitFill: 'all',
+                    hitStroke: 'all',
+                },
+            },
             scaleX: 1,
             scaleY: 1,
             rotation: 0,
@@ -107,7 +129,18 @@ export default observer(function Screenshot({ parent }) {
 
     // 外框、尺寸、对齐和旋转共享一个布局 effect；cleanup 会移除本次创建的全部节点。
     useEffect(() => {
-        const { align, browserHeaderSize, browserUrl, frame, frameConf, padding, rotation, scale } = stores.option;
+        const {
+            align,
+            browserHeaderSize,
+            browserUrl,
+            frame,
+            frameConf,
+            offsetX,
+            offsetY,
+            padding,
+            rotation,
+            scale,
+        } = stores.option;
         const { img } = stores.editor;
         const definition = getFrameDefinition(frame);
         const margin = getMargin(frameConf.width, frameConf.height);
@@ -120,7 +153,16 @@ export default observer(function Screenshot({ parent }) {
         const maxWidth = Math.max(1, frameConf.width - margin - inset * 2);
         const browserHeaderHeight = getBrowserHeaderHeight(frame, browserHeaderSize);
         const maxHeight = Math.max(1, frameConf.height - margin - inset - bottomInset - browserHeaderHeight);
-        const contentSize = computedSize(img.width || 1, img.height || 1, maxWidth, maxHeight);
+        const baseContentSize = computedSize(img.width || 1, img.height || 1, maxWidth, maxHeight);
+        const hasIndependentBrowserHeader = definition.kind === 'browser' || definition.kind === 'arc';
+        // 浏览器顶部栏由 browserHeaderSize 独立控制。缩放只折算到网页内容区域，
+        // 避免拖动四角时地址栏、圆点、图标和 URL 文字被一起放大或缩小。
+        const contentSize = hasIndependentBrowserHeader
+            ? {
+                width: Math.max(1, baseContentSize.width * scale),
+                height: Math.max(1, baseContentSize.height * scale),
+            }
+            : baseContentSize;
         const metrics = getFrameMetrics(frame, contentSize.width, contentSize.height, { headerSize: browserHeaderSize });
         const { totalWidth, totalHeight } = metrics;
         // 平面布局：scale 为二维缩放，rotation（Z 轴）直接作用于 container；
@@ -141,6 +183,8 @@ export default observer(function Screenshot({ parent }) {
         } else {
             ({ x: positionX, y: positionY } = getPosition(align, frameConf.width - totalWidth, frameConf.height - totalHeight));
         }
+        positionX += offsetX;
+        positionY += offsetY;
         const decorationState = createFrameDecorations(frame, metrics, {
             shadow: stores.option.shadow,
             url: browserUrl,
@@ -152,12 +196,12 @@ export default observer(function Screenshot({ parent }) {
         container.stroke = decorationState.stroke ?? null;
         container.width = totalWidth;
         container.height = totalHeight;
-        container.scaleX = scale;
-        container.scaleY = scale;
+        container.scaleX = hasIndependentBrowserHeader ? 1 : scale;
+        container.scaleY = hasIndependentBrowserHeader ? 1 : scale;
         container.skewX = 0;
         container.skewY = 0;
         container.rotation = rotation;
-        container.origin = hasSpatialTransform ? 'center' : align;
+        container.origin = 'center';
         container.x = positionX;
         container.y = positionY;
         box.width = metrics.boxWidth;
@@ -165,11 +209,12 @@ export default observer(function Screenshot({ parent }) {
         box.x = metrics.boxX;
         box.y = metrics.boxY;
         box.cornerRadius = definition.kind === 'device' && frame === 'iphonepro' ? metrics.boxWidth * 0.1 : null;
-        const imageWidth = Math.max(1, metrics.boxWidth - padding);
+        const effectivePadding = hasIndependentBrowserHeader ? padding * scale : padding;
+        const imageWidth = Math.max(1, metrics.boxWidth - effectivePadding);
         const imageHeight = Math.max(1, Math.round(imageWidth * metrics.boxHeight / Math.max(1, metrics.boxWidth)));
         image.width = imageWidth + 2;
         image.height = imageHeight + 2;
-        image.x = padding / 2 - 1;
+        image.x = effectivePadding / 2 - 1;
         image.y = (metrics.boxHeight - imageHeight) / 2 - 1;
         createSnap();
 
@@ -185,7 +230,7 @@ export default observer(function Screenshot({ parent }) {
             box.cornerRadius = null;
             container.cornerRadius = stores.option.round;
         };
-    }, [box, container, image, stores.option.align, stores.option.browserHeaderSize, stores.option.browserUrl, stores.option.frame, stores.option.frameConf.width, stores.option.frameConf.height, stores.option.padding, stores.option.rotation, stores.option.scale, stores.option.shadow]);
+    }, [box, container, image, stores.option.align, stores.option.browserHeaderSize, stores.option.browserUrl, stores.option.frame, stores.option.frameConf.width, stores.option.frameConf.height, stores.option.offsetX, stores.option.offsetY, stores.option.padding, stores.option.rotation, stores.option.scale, stores.option.shadow]);
 
     useEffect(() => {
         parent.add(container);

@@ -91,6 +91,8 @@ export function defaultOption() {
         scaleX: false,
         scaleY: false,
         rotation: 0,
+        offsetX: 0,
+        offsetY: 0,
         padding: 0,
         paddingBg: 'rgba(255,255,255, 100)',
         round: 10,
@@ -197,6 +199,10 @@ export function normalizeOption(raw) {
     out.backgroundAlign = BACKGROUND_ALIGNS.includes(rawBackgroundAlign) ? rawBackgroundAlign : base.backgroundAlign;
     const rotation = Number(raw.rotation);
     out.rotation = Number.isFinite(rotation) ? Math.max(-180, Math.min(180, rotation)) : base.rotation;
+    const offsetX = Number(raw.offsetX);
+    out.offsetX = Number.isFinite(offsetX) ? offsetX : base.offsetX;
+    const offsetY = Number(raw.offsetY);
+    out.offsetY = Number.isFinite(offsetY) ? offsetY : base.offsetY;
     // 3D 旋转（rotationX/rotationY/perspective）功能已移除：剥离旧草稿中的残留字段
     delete out.rotationX;
     delete out.rotationY;

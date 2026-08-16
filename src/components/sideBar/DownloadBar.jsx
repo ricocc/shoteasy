@@ -107,7 +107,7 @@ export default observer(function DownloadBar() {
                 theme={{
                     components: {
                         Button: {
-                            colorPrimary: stores.editor.isDark ? '#0099ff' : '#2563eb',
+                            colorPrimary: stores.editor.isDark ? '#0066ff' : '#2563eb',
                             algorithm: true,
                         },
                     },

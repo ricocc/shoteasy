@@ -170,7 +170,8 @@ export const InspectorContent = observer(() => {
                             min={0.1}
                             max={3}
                             step={0.1}
-                            onChange={(e) => stores.option.setScale(e)}
+                            onChange={(e) => stores.option.setScale(e, { commit: false })}
+                            onChangeComplete={() => stores.history.commit('slider:scale')}
                             value={typeof stores.option.scale === 'number' ? stores.option.scale : 1}
                         />
                     </div>
@@ -194,7 +195,8 @@ export const InspectorContent = observer(() => {
                             min={-180}
                             max={180}
                             step={1}
-                            onChange={(value) => stores.option.setRotation(value)}
+                            onChange={(value) => stores.option.setRotation(value, { commit: false })}
+                            onChangeComplete={() => stores.history.commit('rotation')}
                             value={stores.option.rotation}
                         />
                     </div>

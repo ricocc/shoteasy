@@ -28,6 +28,8 @@ function computeRevision(editor) {
         scaleX: o.scaleX,
         scaleY: o.scaleY,
         rotation: o.rotation,
+        offsetX: o.offsetX,
+        offsetY: o.offsetY,
         padding: o.padding,
         paddingBg: o.paddingBg,
         round: o.round,
