@@ -12,16 +12,6 @@
 - [开发指南](./development.md)：环境、命令、开发约定、验证方法和已知问题。
 - [组件 API](./component-api.md)：npm 库入口、`ImageBeautifier` 属性和集成限制。
 
-## V1 规划中的实现规范
-
-[`v1/README.md`](./v1/README.md) 是 V1 开发的总入口。V1 文档描述计划中的目标和实现约束，除非对应 TODO 已完成并附有验证记录，否则不得将其中功能视为当前已经实现。
-
-- [V1 产品规格](./v1/product-spec.md)：产品定位、界面布局、功能范围和明确不做事项。
-- [V1 技术设计](./v1/technical-design.md)：项目文档、历史记录、草稿、背景、外框、文字与区域效果。
-- [V1 实施计划](./v1/implementation-plan.md)：M0—M7 的执行步骤、依赖关系和退出条件。
-- [V1 TODO](./v1/TODO.md)：唯一任务进度清单，完成项必须附验证结果。
-- [V1 验收规范](./v1/acceptance.md)：旧功能回归、新功能、导出、组件 API 和浏览器验收矩阵。
-
 ## 快速定位
 
 | 目标 | 主要文件 |
@@ -33,11 +23,12 @@
 | LeaferJS 画布初始化 | `src/components/editor/View.jsx` |
 | 截图图层与设备框 | `src/components/editor/layers/Screenshot.jsx` |
 | 标注图形 | `src/components/editor/layers/ShapeLine.jsx` |
-| 右侧配置栏 | `src/components/sideBar/SideBar.jsx` |
+| 右侧配置栏 | `src/components/sideBar/RightInspector.jsx` |
+| 左侧栏目 | `src/components/sideBar/LeftRail.jsx` |
 | 导出与复制 | `src/components/sideBar/DownloadBar.jsx` |
 | 尺寸预设 | `src/utils/sizeConfig.js` |
 | 背景预设 | `src/utils/backgroundConfig.js` |
 
 ## 当前验证状态
 
-仓库的 `pnpm-lock.yaml` 含有重复 YAML 映射键，`pnpm install --frozen-lockfile` 会报 `ERR_PNPM_BROKEN_LOCKFILE`。在修复锁文件前，无法完成可复现的依赖安装；详情见[开发指南](./development.md#已知的安装阻塞)。
+`pnpm install --frozen-lockfile` 已可正常通过（历史上的锁文件重复键问题已在 2026-08-12 重新生成锁文件时修复，详情见[开发指南](./development.md#已知的安装阻塞已修复)）。

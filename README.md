@@ -1,8 +1,6 @@
 # RicoScreenshot
 
-> 基于 [ShotEasy / image-beautifier](https://github.com/CH563/image-beautifier) 二次开发的开源截图美化工具 · 作者 [Rico](https://ricoui.com)
-
-![preview](https://github.com/ricocc/shoteasy/blob/main/preview.png)
+![preview](preview.jpg)
 
 **在线使用：<https://shot.ricoui.com/>**（纯浏览器端处理，图片不上传服务器）
 
@@ -10,14 +8,18 @@
 
 ## 功能特性
 
-- 截图美化：渐变/纯色/图片背景（Unsplash 精选）、圆角、阴影、留白
-- 图片标注：方框、圆圈、箭头、直线、Emoji 表情
-- 图片局部放大（放大镜）
+- 截图美化：渐变 / 纯色 / 图片背景（[Gradientshub](https://gradientshub.com) 本地精选 + Unsplash 天空 / 宇宙 / 桌面），支持自定义纯色与上传本地图片
+- 背景微调：图片模糊 / 遮罩 / 噪点、渐变角度、图片填充方式与九宫格对齐
+- 图片标注：矩形、实心矩形、圆圈、直线、箭头、画笔、放大镜、步骤序号、文字、模糊、马赛克、聚光、Emoji 表情
+- 底部标注工具栏可一键收起为左下角图标，减少画布干扰
+- 截取屏幕：通过浏览器屏幕录制能力直接截取屏幕 / 窗口
+- 撤销 / 重做
 - 添加水印（支持仅背景水印、HDR 效果）
-- 修改尺寸，内置各社媒平台发布的尺寸预设
-- 设备套壳（MacBook / iPhone 等设备边框）
-- 浏览器窗口边框模拟
-- 画布任意缩放和拖拽
+- 修改尺寸，内置各社媒平台发布的尺寸预设；默认 4:3 画布，拖入截图自动保留比例与背景
+- 设备套壳（MacBook / iPhone 等设备边框）、浏览器窗口边框模拟（自定义地址栏 URL 与顶栏尺寸）
+- 初始页所见即所得：4:3 画布卡直接预览默认背景与最终效果，支持点击 / 拖拽 / 粘贴导入
+- 画布任意缩放和拖拽、适应画布
+- 深色 / 浅色主题
 - 多格式导出：PNG / JPG / WebP，1x / 2x / 3x 倍率
 - 一键复制到剪贴板、快捷键支持
 
@@ -43,8 +45,6 @@ pnpm dev
 
 启动后浏览器打开 Vite 输出的地址（默认 <http://localhost:5173>）即可看到编辑器。
 
-> **已知问题**：当前仓库的 `pnpm-lock.yaml` 存在重复 YAML 键，`pnpm install --frozen-lockfile` 会报 `ERR_PNPM_BROKEN_LOCKFILE`。如遇此问题，本地可临时使用 `pnpm install --lockfile=false` 绕过（不具备可复现性，详见 [DOCS/development.md](DOCS/development.md#已知的安装阻塞)）。
-
 ### 常用命令
 
 | 命令 | 用途 |
@@ -65,7 +65,6 @@ pnpm dev
 - [架构与数据流](DOCS/architecture.md)：MobX 状态、LeaferJS 画布、图层与导出链路
 - [用户功能](DOCS/user-guide.md)：导入、画布、标注、边框、水印与导出
 - [开发指南](DOCS/development.md)：环境、命令、开发约定、回归清单
-- [V1 规划](DOCS/v1/README.md)：二次开发的 roadmap 与任务清单
 
 ## 技术栈
 
@@ -73,13 +72,6 @@ pnpm dev
 - [LeaferJS](https://github.com/leaferjs/ui)：画布渲染引擎
 - [MobX](https://mobx.js.org/)：状态管理
 - [Ant Design 5](https://ant.design/) + [Tailwind CSS](https://tailwindcss.cn/)：UI
-
-## Roadmap / TODO
-
-- [ ] Redo / Undo 步骤记录
-- [ ] 文字卡片
-- [ ] 代码美化卡片
-- [ ] GIF 动画
 
 ## 关于作者
 
@@ -94,4 +86,4 @@ pnpm dev
 
 本项目基于开源项目 [image-beautifier](https://github.com/CH563/image-beautifier)（ShotEasy 截图插件内核）二次开发，感谢上游作者 [Chenliwen](https://github.com/CH563) 的工作；上游用于谷歌截图插件 [ShotEasy](https://chromewebstore.google.com/detail/nmppkehciohcgcehlnifgeokgioidknh)。
 
-[MIT License](license) © Chenliwen（上游）· 二次开发 © [Rico](https://ricoui.com)
+[MIT License](LICENSE) © Chenliwen（上游）· 二次开发 © [Rico](https://ricoui.com)

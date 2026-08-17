@@ -13,15 +13,17 @@ pnpm dev
 
 开发服务器由 Vite 启动。项目没有环境变量、后端服务或数据库迁移。
 
-### 已知的安装阻塞
+### 已知的安装阻塞（已修复）
 
-当前 `pnpm-lock.yaml` 是无效 YAML，多个依赖快照被重复写入；例如 `eastasianwidth@0.2.0` 在文件约 3334 和 3350 行重复。验证结果：
+历史问题：`pnpm-lock.yaml` 曾因依赖快照重复写入（如 `eastasianwidth@0.2.0` 在文件中重复出现）属于无效 YAML，`pnpm install --frozen-lockfile` 报 `ERR_PNPM_BROKEN_LOCKFILE: duplicated mapping key`。2026-08-12 的提交 `11cc0ac` 重新生成锁文件后问题消除，当前 `--frozen-lockfile` 可正常通过（已验证 `packages` / `importers` 两段无重复键）。
 
-```text
-ERR_PNPM_BROKEN_LOCKFILE: duplicated mapping key
-```
+若今后再次出现同类问题，标准修复流程：
 
-在专门修复依赖时，应使用与项目约定一致的 pnpm 版本重新生成并审查锁文件，然后再执行 frozen install。仅为本地诊断可使用 `pnpm install --lockfile=false`，但它不具备可复现性，不能视为锁文件已验证，也不应提交生成的临时内容。
+1. 确认使用与 `packageManager` 字段一致的 pnpm 版本（`corepack enable`）；
+2. 删除 `pnpm-lock.yaml` 后执行 `pnpm install` 重新生成；
+3. 审查锁文件 diff（关注依赖版本意外漂移），再以 `pnpm install --frozen-lockfile` 验证后提交。
+
+`pnpm install --lockfile=false` 仅可作本地临时诊断，不具备可复现性，不能视为锁文件已验证，也不应提交生成的临时内容。
 
 ## 常用命令
 
