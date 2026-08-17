@@ -144,6 +144,20 @@ const ListCollapseGlyph = ({ className }) => (
         <line x1="3.5" y1="6.5" x2="3.5" y2="13" />
     </svg>
 );
+// lucide undo-2：回退箭头 + 挂钩弧线
+const Undo2Glyph = ({ className }) => (
+    <svg {...strokeProps} className={className}>
+        <path d="M9 14 4 9l5-5" />
+        <path d="M4 9h10.5a5.5 5.5 0 0 1 5.5 5.5a5.5 5.5 0 0 1-5.5 5.5H11" />
+    </svg>
+);
+// lucide redo-2：前进箭头 + 挂钩弧线
+const Redo2Glyph = ({ className }) => (
+    <svg {...strokeProps} className={className}>
+        <path d="m15 14 5-5-5-5" />
+        <path d="M20 9H9.5A5.5 5.5 0 0 0 4 14.5A5.5 5.5 0 0 0 9.5 20H13" />
+    </svg>
+);
 
 /**
  * 包装任意图标（mage 或自绘）为统一 API。
@@ -204,6 +218,8 @@ export default {
     Smile: wrap(SmileGlyph),
     Undo: wrap(RefreshReverseIcon),
     Redo: wrap(RefreshIcon),
+    Undo2: wrap(Undo2Glyph),
+    Redo2: wrap(Redo2Glyph),
     Reload: wrap(ReloadIcon),
     ChevronRight: wrap(ChevronRightIcon),
     ChevronDown: wrap(ChevronDownIcon),

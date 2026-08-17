@@ -1,3 +1,45 @@
+// —— Gradientshub 本地渐变图 ——
+// 根目录放原图、thumbnails/ 放同名 webp 缩略图；文件名数字前缀是入库序号。
+// 倒序排列（数字大 = 最近加入 = 排最前）；缩略图缺失时回退原图，原图缺失的编号不生效。
+const GRADIENT_EXT_PRIORITY = ['png', 'jpg', 'jpeg', 'webp'];
+
+const collectGradientsByNumber = (modules) => {
+    const byNumber = new Map();
+    Object.entries(modules).forEach(([path, url]) => {
+        const name = path.slice(path.lastIndexOf('/') + 1);
+        const number = Number.parseInt(name, 10);
+        if (!Number.isFinite(number)) return;
+        const ext = name.slice(name.lastIndexOf('.') + 1).toLowerCase();
+        const existing = byNumber.get(number);
+        // 同号多格式（如 11 同时有 jpg/png）取优先级高的
+        if (!existing || GRADIENT_EXT_PRIORITY.indexOf(ext) < GRADIENT_EXT_PRIORITY.indexOf(existing.ext)) {
+            byNumber.set(number, { url, ext });
+        }
+    });
+    return byNumber;
+};
+
+const gradientshubOriginals = collectGradientsByNumber(
+    import.meta.glob('@assets/gradients/*.{png,jpg,jpeg,webp}', { eager: true, query: '?url', import: 'default' })
+);
+const gradientshubThumbnails = collectGradientsByNumber(
+    import.meta.glob('@assets/gradients/thumbnails/*.webp', { eager: true, query: '?url', import: 'default' })
+);
+
+// 键前缀 gh_img_ 与远程 cosmic_img_N 区分（本地 10/11/13/15 与远程编号撞号）
+const gradientshubLocalConfig = Object.fromEntries(
+    [...gradientshubOriginals.entries()]
+        .sort((a, b) => b[0] - a[0])
+        .map(([number, { url }]) => [
+            `gh_img_${number}`,
+            {
+                class: url,
+                preview: gradientshubThumbnails.get(number)?.url || url,
+                fill: { type: 'image', url },
+            },
+        ])
+);
+
 const ADDITIONAL_GRADIENT_STOPS = [
     ['#f5f7fa', '#c3cfe2', '#e0c3fc','#8ec5fc'],
     ['#ff9a9e', '#fecfef', '#c1dfc4', '#deecdd'],
@@ -360,6 +402,8 @@ const legacyBackgroundConfig = {
         },
     },
     ...additionalGradientConfig,
+    // Gradientshub 本地图排在远程图前面（倒序：最近加入的最前）
+    ...gradientshubLocalConfig,
     cosmic_img_1: {
         class: 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3wxMTY5OTZ8MHwxfHNlYXJjaHwxfHxncmFkaWVudHxlbnwwfHx8fDE3MDMwNjAzNjh8MA&ixlib=rb-4.0.3&q=80',
         fill: {
@@ -542,7 +586,7 @@ const getBackgroundType = (key) => {
     if (key === 'none') return 'none';
     if (key.startsWith('solid_') || key === 'custom_solid') return 'solid';
     if (key.startsWith('default_') || key.startsWith('gradient_')) return 'gradient';
-    if (key.startsWith('cosmic_img_') || key.startsWith('cloud_img_') || key.startsWith('desktop_img_')) return 'builtin-image';
+    if (key.startsWith('gh_img_') || key.startsWith('cosmic_img_') || key.startsWith('cloud_img_') || key.startsWith('desktop_img_')) return 'builtin-image';
     return 'solid';
 };
 
@@ -551,7 +595,7 @@ const getBackgroundCategory = (key) => {
     if (key.startsWith('default_')) return 'default';
     if (key.startsWith('solid_') || key === 'custom_solid') return 'solid';
     if (key.startsWith('gradient_')) return 'gradient';
-    if (key.startsWith('cosmic_img_')) return 'cosmic';
+    if (key.startsWith('gh_img_') || key.startsWith('cosmic_img_')) return 'cosmic';
     if (key.startsWith('cloud_img_')) return 'cloud';
     if (key.startsWith('desktop_img_')) return 'desktop';
     return 'custom';

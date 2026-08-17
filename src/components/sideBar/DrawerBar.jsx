@@ -61,8 +61,8 @@ export default observer(function DrawerBar({ showMore, onChange }) {
                         onClick={() => onChange(false)}
                     >返回</Button>
                 </div>
-                <div className="h-0 flex-1 overflow-y-auto px-4 py-2">
-                    <h4 className="text-sm font-bold py-2">上传图片</h4>
+                <div className="h-0 flex-1 overflow-y-auto px-4 py-4">
+                    <h4 className="text-sm font-medium py-4">上传图片</h4>
                     <div className="pb-1">
                         <label className="inline-flex cursor-pointer items-center rounded-md border border-slate-300 px-2 py-1 text-xs">
                             选择本地图片
@@ -70,8 +70,8 @@ export default observer(function DrawerBar({ showMore, onChange }) {
                         </label>
                     </div>
                     {isImageBackground && (
-                        <div className="border-y border-slate-200/70 py-2">
-                            <h4 className="text-sm font-bold py-2">图片背景</h4>
+                        <div className="border-y border-slate-200/70 py-4">
+                            <h4 className="text-sm font-medium py-4">图片背景</h4>
                             <Segmented
                                 block
                                 size="small"
@@ -97,7 +97,7 @@ export default observer(function DrawerBar({ showMore, onChange }) {
                             </div>
                         </div>
                     )}
-                    <h4 className="text-sm font-bold py-2">背景效果</h4>
+                    <h4 className="text-sm font-medium py-4">背景效果</h4>
                     <div className="pb-3">
                         <div className="flex items-center justify-between">
                             <label>模糊</label>
@@ -119,9 +119,9 @@ export default observer(function DrawerBar({ showMore, onChange }) {
                         </div>
                         <Slider min={0} max={1} step={0.05} value={stores.option.backgroundNoise} onChange={(v) => stores.option.setBackgroundNoise(v)} />
                     </div>
-                    <h4 className="text-sm font-bold py-2">无背景</h4>
+                    <h4 className="text-sm font-medium py-4">无背景</h4>
                     <BackgroundSelect type="none" onChange={onSelectChange} value={stores.option.background} />
-                    <h4 className="text-sm font-bold py-2">纯色</h4>
+                    <h4 className="text-sm font-medium py-4">纯色</h4>
                     <div className="flex items-center justify-between py-1">
                         <span className="text-xs text-gray-500">自定义颜色</span>
                         <ColorPicker onChange={handleCustom}>
@@ -129,7 +129,7 @@ export default observer(function DrawerBar({ showMore, onChange }) {
                         </ColorPicker>
                     </div>
                     <BackgroundSelect type="solid" onChange={onSelectChange} value={stores.option.background} />
-                    <h4 className="text-sm font-bold py-2">渐变</h4>
+                    <h4 className="text-sm font-medium py-4">渐变</h4>
                     <BackgroundSelect type="gradient" onChange={onSelectChange} value={stores.option.background} />
                     {backgroundDefinition?.type === 'gradient' && (
                         <div className="pb-3 pt-2">
@@ -149,11 +149,22 @@ export default observer(function DrawerBar({ showMore, onChange }) {
                             />
                         </div>
                     )}
-                    <h4 className="text-sm font-bold py-2">宇宙渐变</h4>
+                    <div className="flex items-center justify-between py-4">
+                        <h4 className="text-sm font-medium">Gradientshub</h4>
+                        <a
+                            href="https://gradientshub.com"
+                            target="_blank"
+                            rel="noreferrer noopener"
+                            aria-label="前往 Gradientshub"
+                            className="text-gray-500 hover:opacity-70"
+                        >
+                            <Icon.ArrowUpRight size={14} />
+                        </a>
+                    </div>
                     <BackgroundSelect type="cosmic" onChange={onSelectChange} value={stores.option.background} />
-                    <h4 className="text-sm font-bold py-2">天空白云</h4>
+                    <h4 className="text-sm font-medium py-4">天空白云</h4>
                     <BackgroundSelect type="cloud" onChange={onSelectChange} value={stores.option.background} />
-                    <h4 className="text-sm font-bold py-2">桌面</h4>
+                    <h4 className="text-sm font-medium py-4">桌面</h4>
                     <BackgroundSelect type="desktop" onChange={onSelectChange} value={stores.option.background} />
                 </div>
             </div>

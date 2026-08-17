@@ -7,7 +7,7 @@ import usePaste from '@hooks/usePaste';
 import useSetImg from '@hooks/useSetImg';
 import useImageDrop from '@hooks/useImageDrop';
 import { captureScreen } from '@utils/captureScreen';
-import demoPng from '@assets/demo.png';
+import demoPng from '@assets/demo.jpg';
 
 const { Dragger } = Upload;
 

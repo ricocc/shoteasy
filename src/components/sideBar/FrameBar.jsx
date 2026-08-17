@@ -121,6 +121,14 @@ export default observer(function FrameBar() {
                 </div>
                 <div className="shoteasy-frame-panel__subheading">浏览器外框</div>
                 <div className="shoteasy-frame-grid is-quick" role="radiogroup" aria-label="常用浏览器外框">
+                    {/* 无外框领头，与 5 个浏览器外框凑满 2 列 × 3 行；「查看全部」抽屉里仍归基础外框组 */}
+                    <FrameOption
+                        frame="none"
+                        name="quick-frame"
+                        compact
+                        selected={stores.option.frame === 'none'}
+                        onSelect={selectFrame}
+                    />
                     {browserFrames.map((item) => (
                         <FrameOption
                             key={item.id}

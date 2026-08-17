@@ -34,7 +34,7 @@ export default observer(function TopBar({ headLeft, headRight }) {
                         className="shoteasy-icon-button"
                         aria-label="撤销"
                         disabled={!stores.history.canUndo}
-                        icon={<Icon.Undo size={16} />}
+                        icon={<Icon.Undo2 size={16} />}
                         onClick={() => stores.history.undo()}
                     />
                 </Tooltip>
@@ -45,7 +45,7 @@ export default observer(function TopBar({ headLeft, headRight }) {
                         className="shoteasy-icon-button"
                         aria-label="重做"
                         disabled={!stores.history.canRedo}
-                        icon={<Icon.Redo size={16} />}
+                        icon={<Icon.Redo2 size={16} />}
                         onClick={() => stores.history.redo()}
                     />
                 </Tooltip>
@@ -56,7 +56,7 @@ export default observer(function TopBar({ headLeft, headRight }) {
                         className="shoteasy-icon-button"
                         aria-label="重置图片样式"
                         disabled={!stores.editor.img?.src || stores.option.imageStyleIsDefault}
-                        icon={<Icon.Reload size={16} />}
+                        icon={<Icon.RotateCcw size={16} />}
                         onClick={() => stores.option.resetImageStyle()}
                     />
                 </Tooltip>
