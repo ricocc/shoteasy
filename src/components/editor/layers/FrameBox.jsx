@@ -4,7 +4,7 @@ import { Frame } from 'leafer-ui';
 import stores from '@stores';
 import { blurImageUrl, buildLayeredFill } from '@utils/backgroundEffects';
 
-const BACKGROUND_CORNER_RADIUS = 20;
+const BACKGROUND_CORNER_RADIUS = 16;
 
 const childrenInjectProps = (params, children) => {
     if (children instanceof Array) {
@@ -69,10 +69,15 @@ const FrameBox = observer(({ width, height, background, parent, children, cursor
         frame.width = width;
         frame.height = height;
         frame.cornerRadius = BACKGROUND_CORNER_RADIUS;
+        // 画布卡描边与面板同语言（--se-border）；Leafer 不识别 CSS 变量，按主题取字面值；
+        // inside 对齐让 1px 描边收在画布内，不超出导出尺寸。
+        frame.stroke = stores.editor.isDark ? 'rgba(136, 136, 136, 0.16)' : '#e5e8ef';
+        frame.strokeWidth = 1;
+        frame.strokeAlign = 'inside';
         // buildLayeredFill 无背景（无背景选项）时返回 null；Leafer 的 fill=null
         // 会回退到 Frame 默认白底，导致透明画布渲染/导出不透明，需显式赋透明色。
         frame.fill = effectiveFill ?? 'rgba(0,0,0,0)';
-    }, [width, height, effectiveFill]);
+    }, [width, height, effectiveFill, stores.editor.isDark]);
 
     useEffect(() => {
         frame.cursor = cursor || 'auto';

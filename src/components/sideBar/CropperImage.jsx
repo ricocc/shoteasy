@@ -4,7 +4,7 @@ import Icon from '@components/Icon';
 import { Button, Tooltip, Modal } from 'antd';
 import stores from '@stores';
 import Cropper from "react-cropper";
-import { getMargin } from "@utils/utils";
+import { getDefaultFrameSize } from "@utils/utils";
 import "cropperjs/dist/cropper.css";
 
 export default observer(function CropperImage() {
@@ -25,8 +25,9 @@ export default observer(function CropperImage() {
                     height,
                 }));
                 if (stores.option.size.type === 'auto') {
-                    const margin = getMargin(width, height);
-                    stores.option.setFrameSize(width + margin, height + margin);
+                    // 裁剪后画布同样保持默认 4:3，与拖入截图的行为一致
+                    const frameSize = getDefaultFrameSize(width, height);
+                    stores.option.setFrameSize(frameSize.width, frameSize.height);
                 }
             }
         }
@@ -43,6 +44,7 @@ export default observer(function CropperImage() {
                 shape='circle'
                     aria-label='裁剪图片'
                     icon={<Icon.Crop size={18} />}
+                    disabled={!stores.editor.img?.src}
                     onClick={handleCrop}
                 ></Button>
             </Tooltip>

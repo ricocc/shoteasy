@@ -1,4 +1,4 @@
-import { getImage, getMargin } from '@utils/utils';
+import { getImage, getDefaultFrameSize } from '@utils/utils';
 
 export default (stores) => {
     const getFile = async (file, type = 'blob', options = {}) => {
@@ -28,8 +28,9 @@ export default (stores) => {
             stores.editor.setImg(nextImage);
         }
         if (stores.option.size.type === 'auto') {
-            const margin = getMargin(width, height);
-            stores.option.setFrameSize(width + margin, height + margin);
+            // 自动尺寸保持默认 4:3 画布（与初始页一致），不再贴合图片比例
+            const frameSize = getDefaultFrameSize(width, height);
+            stores.option.setFrameSize(frameSize.width, frameSize.height);
         }
         if (options.replace) stores.history?.reset?.();
     }

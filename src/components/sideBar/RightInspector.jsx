@@ -14,6 +14,7 @@ import DrawerBar from './DrawerBar';
 import TextProperties from './TextProperties';
 import EffectProperties from './EffectProperties';
 import { BackgroundSelect } from './BackgroundSelect';
+import UploadBackground from './UploadBackground';
 
 /** 预设区直出的图片背景选项（精选 10 张，见 backgroundConfig.QUICK_IMAGE_KEYS）。 */
 const quickImageOptions = QUICK_IMAGE_KEYS
@@ -162,9 +163,21 @@ export const InspectorContent = observer(() => {
                                 return null;
                             })}
                         </Radio.Group>
-                        {/* 图片背景快选：精选 10 张直出，免开抽屉；选中走 applyBackground 异步下载，保证导出干净 */}
+                        {/* 图片背景快选：精选 10 张直出；行内提供「上传本地图片」与「更多」抽屉入口。
+                            选中走 applyBackground 异步下载，保证导出干净 */}
                         <div className="pt-3">
-                            <label className="block pb-1.5">图片</label>
+                            <div className="flex justify-between items-center pb-1.5">
+                                <label>图片</label>
+                                <div className="flex items-center gap-1">
+                                    <UploadBackground compact />
+                                    <Button
+                                        type="text"
+                                        size="small"
+                                        className="text-xs flex items-center opacity-80 m-0"
+                                        onClick={() => setShowMore(true)}
+                                    >更多 <Icon.ChevronRight size={16} /></Button>
+                                </div>
+                            </div>
                             <BackgroundSelect
                                 type="cloud"
                                 options={quickImageOptions}

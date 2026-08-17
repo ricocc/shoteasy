@@ -84,9 +84,11 @@ export default observer(function App({ defaultImg, headLeft, headRight, isDark, 
         <div id="shoteasy-container" className={cn("polka shoteasy-app flex flex-col overflow-hidden antialiased w-full h-[100vh]", boxClassName)} data-mode={stores.editor.isDark?'dark':'light'}>
           <TopBar headLeft={headLeft} headRight={headRight} />
           <div className="flex flex-row flex-1 h-0">
-            {isEditing && <LeftRail />}
+            {/* 初始页也展示全部栏目（与导入截图后一致），让用户直观看到能做什么；
+                中间区域仍在 Init 画布卡与 Editor 之间切换 */}
+            <LeftRail />
             {workplace}
-            {isEditing && <RightInspector />}
+            <RightInspector />
           </div>
         </div>
       </ConfigProvider>

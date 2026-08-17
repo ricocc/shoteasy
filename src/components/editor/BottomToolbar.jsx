@@ -25,8 +25,16 @@ const toolLabels = {
     Smile: '表情',
 };
 
+// 收起状态持久化到 localStorage：不常用标注的用户可以一直保持收起，刷新后仍是收起态
+const TOOLBAR_COLLAPSED_KEY = 'SHOTEASY_BOTTOM_TOOLBAR_COLLAPSED';
+
 export default observer(function BottomToolbar() {
     const [isMove, setIsMove] = useState(false);
+    const [isCollapsed, setIsCollapsed] = useState(() => localStorage.getItem(TOOLBAR_COLLAPSED_KEY) === '1');
+    const toggleCollapsed = () => setIsCollapsed((prev) => {
+        localStorage.setItem(TOOLBAR_COLLAPSED_KEY, prev ? '0' : '1');
+        return !prev;
+    });
     const selectTool = (type) => {
         if (!stores.editor.isEditing) return;
         const { useTool } = stores.editor;
@@ -60,7 +68,8 @@ export default observer(function BottomToolbar() {
     };
 
     return (
-        <div className="shoteasy-bottom-toolbar" aria-label="标注工具">
+        <>
+            <div className={cn('shoteasy-bottom-toolbar', isCollapsed && 'is-collapsed')} aria-label="标注工具">
             <div className="shoteasy-bottom-toolbar__tools">
                 {toolList.map(item => {
                     if (item === 'Smile') {
@@ -131,6 +140,28 @@ export default observer(function BottomToolbar() {
                     onClick={toggleMove}
                 />
             </Tooltip>
-        </div>
+            <Tooltip placement="top" arrow={false} title="收起工具栏">
+                <Button
+                    type="text"
+                    shape="circle"
+                    aria-label="收起工具栏"
+                    className="shoteasy-tool-button"
+                    icon={<Icon.Collapse size={16} />}
+                    onClick={toggleCollapsed}
+                />
+            </Tooltip>
+            </div>
+            {/* 收起后的左下角入口：与工具栏互斥显隐，切换由 CSS 过渡完成顺滑衔接 */}
+            <Tooltip placement="top" arrow={false} title="展开标注工具栏">
+                <Button
+                    type="text"
+                    shape="circle"
+                    aria-label="展开标注工具栏"
+                    className={cn('shoteasy-bottom-toolbar-collapsed', !isCollapsed && 'is-hidden')}
+                    icon={<Icon.Pencil size={16} />}
+                    onClick={toggleCollapsed}
+                />
+            </Tooltip>
+        </>
     );
 });

@@ -86,8 +86,9 @@ const SmileGlyph = ({ className }) => (
         <line x1="15" y1="9.5" x2="15.01" y2="9.5" />
     </svg>
 );
+// lucide crop：与共享 strokeProps 仅描边略粗（1.75），覆盖 strokeWidth 即可
 const CropGlyph = ({ className }) => (
-    <svg {...strokeProps} className={className}>
+    <svg {...strokeProps} strokeWidth={1.75} className={className}>
         <path d="M6 2v14a2 2 0 0 0 2 2h14" />
         <path d="M18 22V8a2 2 0 0 0-2-2H2" />
     </svg>
@@ -158,6 +159,22 @@ const Redo2Glyph = ({ className }) => (
         <path d="M20 9H9.5A5.5 5.5 0 0 0 4 14.5A5.5 5.5 0 0 0 9.5 20H13" />
     </svg>
 );
+// lucide arrow-left-to-line：收起工具栏——左竖线 + 指左箭头
+const CollapseGlyph = ({ className }) => (
+    <svg {...strokeProps} className={className}>
+        <path d="M3 19V5" />
+        <path d="m13 6-6 6 6 6" />
+        <path d="M7 12h14" />
+    </svg>
+);
+// lucide upload：上传——向上箭头 + 底部托盘
+const UploadGlyph = ({ className }) => (
+    <svg {...strokeProps} className={className}>
+        <path d="M12 3v12" />
+        <path d="m7 8 5-5 5 5" />
+        <path d="M20 17v2a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-2" />
+    </svg>
+);
 
 /**
  * 包装任意图标（mage 或自绘）为统一 API。
@@ -220,6 +237,8 @@ export default {
     Redo: wrap(RefreshIcon),
     Undo2: wrap(Undo2Glyph),
     Redo2: wrap(Redo2Glyph),
+    Collapse: wrap(CollapseGlyph),
+    Upload: wrap(UploadGlyph),
     Reload: wrap(ReloadIcon),
     ChevronRight: wrap(ChevronRightIcon),
     ChevronDown: wrap(ChevronDownIcon),

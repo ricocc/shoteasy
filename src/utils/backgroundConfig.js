@@ -652,12 +652,13 @@ export const normalizeBackgroundKey = (value) => {
 export const getBackgroundDefinition = (value) => normalizedBackgroundConfig[normalizeBackgroundKey(value)];
 
 /**
- * 检查器「预设」区直出的图片背景（从内置图片精选 10 张：5 天空 + 3 宇宙 + 2 桌面），
- * 免开「更多」抽屉即可一键选中；完整列表仍在抽屉里。
+ * 检查器「预设」区直出的图片背景（精选 10 张：4 gradientshub 渐变 + 2 天空 + 2 宇宙 + 2 桌面，
+ * 恰好凑满两行五列网格），免开「更多」抽屉即可一键选中；完整列表仍在抽屉里。
  */
 export const QUICK_IMAGE_KEYS = [
-    'cloud_img_1', 'cloud_img_2', 'cloud_img_3', 'cloud_img_4', 'cloud_img_5',
-    'cosmic_img_1', 'cosmic_img_5', 'cosmic_img_9',
+    'gh_img_50', 'gh_img_47', 'gh_img_44', 'gh_img_13',
+    'cloud_img_1', 'cloud_img_2',
+    'cosmic_img_1', 'cosmic_img_5',
     'desktop_img_1', 'desktop_img_2',
 ].filter((key) => Boolean(normalizedBackgroundConfig[key]));
 

@@ -10,17 +10,32 @@ const items = [
     { key: 2, label: '200%' },
 ];
 
+// 初始页缩放：无 Leafer 画布，直接缩放初始画布卡（CSS transform），25%–400%
+const INIT_SCALE_STEP = 1.25;
+const clampInitScale = (value) => Math.max(0.25, Math.min(4, value));
+
 export default observer(function Zoom() {
+    const hasApp = () => Boolean(stores.editor.app);
     const handleZoom = (key) => {
-        stores.editor.app?.tree.zoom(key);
+        if (!hasApp()) {
+            const next = clampInitScale((stores.editor.scale / 100) * (key === 'in' ? INIT_SCALE_STEP : 1 / INIT_SCALE_STEP));
+            stores.editor.setScale(next);
+            return;
+        }
+        stores.editor.app.tree.zoom(key);
         stores.editor.setScale(stores.editor.app.tree.scale);
     };
     const handleMenuClick = (item) => {
         const num = Number(item.key);
+        if (!hasApp()) {
+            // 4 = 适应画布：初始卡的基础尺寸即适应尺寸，回到 100%
+            stores.editor.setScale(num === 4 ? 1 : num);
+            return;
+        }
         if (num === 4) {
-            stores.editor.app?.tree.zoom('fit', 100);
+            stores.editor.app.tree.zoom('fit', 100);
         } else {
-            stores.editor.app?.tree.zoom(num);
+            stores.editor.app.tree.zoom(num);
         }
         stores.editor.setScale(stores.editor.app.tree.scale);
     };

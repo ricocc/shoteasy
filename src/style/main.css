@@ -188,15 +188,15 @@
     .shoteasy-logo {
         color: var(--se-ink);
         white-space: nowrap;
+        letter-spacing: 0.1px;
     }
 
     .shoteasy-logo__image {
         display: block;
-        width: 24px;
-        height: 24px;
+        width: 28px;
+        height: 28px;
         flex: 0 0 24px;
         object-fit: contain;
-        border-radius: 6px;
     }
 
     .shoteasy-logo:hover {
@@ -347,6 +347,24 @@
         width: min(100%, 620px);
     }
 
+    /* 初始页 4:3 画布卡：跟随默认背景令牌铺面，中间承载精简上传 UI；
+       尺寸对齐编辑器「适应画布」：按视口高度铺满工作区（仅扣除 topbar 56 + 空态 padding），4:3 不溢出 */
+    .shoteasy-init-canvas {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 16px;
+        width: min(100%, calc((100dvh - 200px) * 4 / 3));
+        aspect-ratio: 4 / 3;
+        background-color: var(--se-panel-muted);
+        background-repeat: no-repeat;
+        border: 1px solid var(--se-border);
+        border-radius: 10px;
+        box-shadow: var(--shadow-float);
+        transition: transform 160ms ease;
+    }
+
     .shoteasy-empty-state__heading {
         display: flex;
         align-items: center;
@@ -389,18 +407,21 @@
         display: block;
     }
 
+    /* 上传卡：默认即呈现原 hover 的强调态（蓝虚线 + 强调底 + 辉光） */
     .shoteasy-upload-card .ant-upload.ant-upload-drag {
         padding: 0;
-        border: 1px dashed var(--se-border-strong);
+        border: 1px dashed var(--se-accent);
         border-radius: var(--radius-card);
-        background: color-mix(in srgb, var(--se-panel) 88%, transparent);
-        transition: border-color 160ms ease, background-color 160ms ease, transform 160ms ease;
-    }
-
-    .shoteasy-upload-card .ant-upload.ant-upload-drag:hover {
-        border-color: var(--se-accent);
         background: var(--se-accent-soft);
         box-shadow: var(--se-glow);
+        transition: border-color 160ms ease, background-color 160ms ease, box-shadow 160ms ease;
+    }
+
+    /* hover 只轻微变灰，不再进一步强调 */
+    .shoteasy-upload-card .ant-upload.ant-upload-drag:hover {
+        border-color: color-mix(in srgb, var(--se-accent) 55%, var(--se-border-strong));
+        background: color-mix(in srgb, var(--se-accent-soft) 55%, var(--se-panel-muted));
+        box-shadow: var(--shadow-subtle);
     }
 
     .shoteasy-upload-card__body {
@@ -1355,6 +1376,18 @@
         backdrop-filter: blur(8px);
         overflow-x: auto;
         scrollbar-width: none;
+        /* 展开进场：淡入 + 从下方浮起（减速曲线） */
+        transition: opacity 200ms ease, transform 240ms cubic-bezier(0.2, 0.8, 0.3, 1);
+    }
+
+    /* 折叠退场：下沉淡出（加速曲线）；visibility 延迟到过渡结束后再隐藏，
+       展开方向用基础规则立即恢复可见与交互 */
+    .shoteasy-bottom-toolbar.is-collapsed {
+        opacity: 0;
+        transform: translateX(-50%) translateY(10px) scale(0.96);
+        visibility: hidden;
+        pointer-events: none;
+        transition: opacity 180ms ease, transform 220ms cubic-bezier(0.4, 0, 1, 1), visibility 0s linear 220ms;
     }
 
     .shoteasy-bottom-toolbar::-webkit-scrollbar {
@@ -1410,11 +1443,90 @@
         border-color: var(--se-border);
     }
 
+    /* 本地图片上传入口（背景）：抽屉里的虚线卡片与初始页上传卡同语言 */
+    .shoteasy-bg-upload-tile {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+        padding: 14px 12px;
+        border: 1px dashed var(--se-accent);
+        border-radius: var(--radius-card);
+        background: var(--se-accent-soft);
+        color: var(--se-accent);
+        font-size: 12px;
+        cursor: pointer;
+        transition: border-color 160ms ease, background-color 160ms ease;
+    }
+
+    .shoteasy-bg-upload-tile:hover {
+        border-color: color-mix(in srgb, var(--se-accent) 55%, var(--se-border-strong));
+        background: color-mix(in srgb, var(--se-accent-soft) 55%, var(--se-panel-muted));
+    }
+
+    /* 检查器「图片」行的紧凑上传按钮 */
+    .shoteasy-bg-upload-compact {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 24px;
+        height: 24px;
+        border-radius: 6px;
+        color: var(--se-muted);
+        cursor: pointer;
+        transition: color 160ms ease, background-color 160ms ease;
+    }
+
+    .shoteasy-bg-upload-compact:hover {
+        color: var(--se-accent);
+        background: var(--se-accent-soft);
+    }
+
+    /* 收起后的标注工具入口：左下角单按钮，与整条工具栏同语言（玻璃面板 + 描边 + 柔影）；
+       与工具栏互斥显隐，从左侧滑入/滑出 */
+    .shoteasy-bottom-toolbar-collapsed.ant-btn {
+        position: absolute;
+        z-index: 10;
+        left: 12px;
+        bottom: 12px;
+        width: 34px;
+        min-width: 34px;
+        height: 34px;
+        padding: 0;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--se-control-icon);
+        background: color-mix(in srgb, var(--se-panel-muted) 92%, transparent);
+        border: 1px solid var(--se-border);
+        border-radius: 50%;
+        box-shadow: var(--shadow-float);
+        backdrop-filter: blur(8px);
+        /* 展开标注时的进场：从左侧滑入（减速曲线） */
+        transition: opacity 200ms ease, transform 240ms cubic-bezier(0.2, 0.8, 0.3, 1), color 160ms ease, background-color 160ms ease;
+    }
+
+    .shoteasy-bottom-toolbar-collapsed.ant-btn:hover {
+        color: var(--se-accent);
+        background: var(--se-accent-soft);
+    }
+
+    /* 工具栏展开时入口退场：向左滑出淡去（加速曲线），visibility 延迟收尾避免抢焦点 */
+    .shoteasy-bottom-toolbar-collapsed.ant-btn.is-hidden {
+        opacity: 0;
+        transform: translateX(-10px) scale(0.8);
+        visibility: hidden;
+        pointer-events: none;
+        transition: opacity 160ms ease, transform 200ms cubic-bezier(0.4, 0, 1, 1), visibility 0s linear 200ms;
+    }
+
+    /* 缩放控件固定在工作区右上角（topbar 下方）：底部中央被标注工具栏占据，
+       右下角在窄屏会与之重叠；位置全宽度稳定，不随断点漂移 */
     .shoteasy-zoom-controls {
         position: absolute;
         z-index: 10;
         right: 12px;
-        bottom: 12px;
+        top: 12px;
         display: flex;
         align-items: center;
         gap: 7px;
@@ -1563,9 +1675,14 @@
 
     .shoteasy-bottom-toolbar {
         left: 12px;
-        right: 76px;
+        right: 12px;
         max-width: none;
         transform: none;
+    }
+
+    /* 窄屏下基础 transform 为 none，折叠位移不再叠加 translateX */
+    .shoteasy-bottom-toolbar.is-collapsed {
+        transform: translateY(10px) scale(0.96);
     }
 }
 

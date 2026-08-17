@@ -95,6 +95,15 @@ export function normalizeShadow(raw) {
 }
 
 /**
+ * 默认背景（gh_img_50）的画布填充。与 stores/option.js 构造器的派生逻辑一致，
+ * mode/align 对应 backgroundMode / backgroundAlign 的默认值。
+ */
+const defaultBackgroundFill = () => {
+    const definition = getBackgroundDefinition('gh_img_50');
+    return definition?.fill ? { ...definition.fill, mode: 'cover', align: 'center' } : null;
+};
+
+/**
  * 默认 option 快照。与 stores/option.js 的类字段保持一致；
  * 两者都是 V1 锁定的默认值，改动任一处时需同步。
  */
@@ -112,9 +121,9 @@ export function defaultOption() {
         shadow: shadowFromIntensity(3),
         frame: 'none',
         frameMode: 'cover',
-        browserUrl: 'shoteasy.app',
+        browserUrl: 'shot.ricoui.com',
         browserHeaderSize: 100,
-        background: 'default_1',
+        background: 'gh_img_50',
         backgroundAssetId: null,
         backgroundMode: 'cover',
         backgroundAlign: 'center',
@@ -131,12 +140,8 @@ export function defaultOption() {
         frameConf: {
             width: 800,
             height: 600,
-            background: {
-                type: 'linear',
-                from: 'left',
-                to: 'right',
-                stops: ['#f5f7fa', '#c3cfe2', '#e0c3fc', '#8ec5fc']
-            }
+            // 与 option 构造器一致：默认背景 gh_img_50 的画布填充从定义派生（cover + center）
+            background: defaultBackgroundFill()
         }
     };
 }

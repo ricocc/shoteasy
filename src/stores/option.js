@@ -74,9 +74,9 @@ class Option {
     shadow = shadowFromIntensity(3);
     frame = 'none';
     frameMode = 'cover';
-    browserUrl = 'shoteasy.app';
+    browserUrl = 'shot.ricoui.com';
     browserHeaderSize = 100;
-    background = 'default_1';
+    background = 'gh_img_50';
     backgroundAssetId = null;
     backgroundMode = 'cover';
     backgroundAlign = 'center';
@@ -107,6 +107,10 @@ class Option {
         }
     }
     constructor() {
+        // 默认背景与初始页一致（gh_img_50）：frameConf.background 从定义派生图片填充，
+        // 避免进入编辑器后画布仍渲染旧版渐变、与初始页背景不一致。
+        this.frameConf.background = this.getBackgroundFill(getBackgroundDefinition(this.background))
+            ?? this.frameConf.background;
         makeAutoObservable(this);
     }
 

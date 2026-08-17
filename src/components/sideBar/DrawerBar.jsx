@@ -3,8 +3,8 @@ import { observer } from 'mobx-react-lite';
 import Icon from '@components/Icon';
 import ColorPicker from '@components/ColorPicker';
 import stores from '@stores';
-import assetStore from '@stores/assetStore';
 import colorSvg from '@assets/color.svg';
+import UploadBackground from './UploadBackground';
 import { BackgroundSelect } from './BackgroundSelect';
 import { getBackgroundDefinition } from '@utils/backgroundConfig';
 
@@ -22,14 +22,6 @@ export default observer(function DrawerBar({ showMore, onChange }) {
         const color = e.toHexString();
         stores.option.setCustomSolidBackground(color);
     }
-    const handleUpload = (event) => {
-        const file = event.target.files?.[0];
-        if (file?.type?.startsWith('image/')) {
-            const asset = assetStore.add(file);
-            if (asset) stores.option.setUploadedBackground(asset);
-        }
-        event.target.value = '';
-    };
     const onSelectChange = (key) => {
         // 内置图片背景先下载为 Blob 再应用（M4.10）；失败时保留原背景并提示（M4.14）
         stores.option.applyBackground(key).catch(() => {
@@ -63,14 +55,11 @@ export default observer(function DrawerBar({ showMore, onChange }) {
                 </div>
                 <div className="h-0 flex-1 overflow-y-auto px-4 py-4">
                     <h4 className="text-sm font-medium py-4">上传图片</h4>
-                    <div className="pb-1">
-                        <label className="inline-flex cursor-pointer items-center rounded-md border border-slate-300 px-2 py-1 text-xs">
-                            选择本地图片
-                            <input type="file" accept="image/*" className="sr-only" onChange={handleUpload} />
-                        </label>
+                    <div className="pb-2">
+                        <UploadBackground />
                     </div>
                     {isImageBackground && (
-                        <div className="border-y border-slate-200/70 py-4">
+                        <div className="border-y border-slate-200/10 py-6">
                             <h4 className="text-sm font-medium py-4">图片背景</h4>
                             <Segmented
                                 block

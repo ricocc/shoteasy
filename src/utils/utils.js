@@ -104,6 +104,14 @@ export const getMargin = (width, height, r = 0.15) => {
     return Math.round(min * r);
 };
 
+// 自动尺寸下画布保持与初始页一致的 4:3：以「图片 + 15% 边距」为下限推导 4:3 外接框，
+// 更宽/更高的截图在富余方向留出背景带（截图在框内等比居中，见 Screenshot 布局）。
+export const getDefaultFrameSize = (width, height) => {
+    const margin = getMargin(width, height);
+    const frameWidth = Math.max(width + margin, Math.round((height + margin) * 4 / 3));
+    return { width: frameWidth, height: Math.round(frameWidth * 3 / 4) };
+};
+
 // type: ['top-left', 'top', 'top-right', 'left', 'center', 'right', 'bottom-left', 'bottom', 'bottom-right']
 export const getPosition = (type, xw, xh) => {
     if (type === 'top-left')

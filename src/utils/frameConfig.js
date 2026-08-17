@@ -200,7 +200,7 @@ export const createFrameDecorations = (frame, metrics, options = {}) => {
         const spacingScale = scale > 1 ? 1 + (scale - 1) * 2 / 3 : scale;
         const controlScale = Math.max(0.72, Math.min(1.55, scale, width / 540));
         const icons = BROWSER_ICON_SETS[dark ? 'dark' : 'light'];
-        const url = String(options.url ?? 'shoteasy.app').trim();
+        const url = String(options.url ?? 'shot.ricoui.com').trim();
         const ink = dark ? '#c5cbd1' : '#646a70';
         const topRadius = Math.max(7, Math.round(10 * controlScale));
         const addIcon = (iconUrl, centerX, centerY, iconWidth, iconHeight, format = 'svg', opacity = 1) => {

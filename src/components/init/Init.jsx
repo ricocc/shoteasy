@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { observer } from 'mobx-react-lite';
 import Icon from '@components/Icon';
 import { Upload, Button, Tooltip } from 'antd';
@@ -6,10 +7,27 @@ import stores from '@stores';
 import usePaste from '@hooks/usePaste';
 import useSetImg from '@hooks/useSetImg';
 import useImageDrop from '@hooks/useImageDrop';
+import Zoom from '@components/editor/Zoom';
 import { captureScreen } from '@utils/captureScreen';
-import demoPng from '@assets/demo.jpg';
+import { getBackgroundDefinition } from '@utils/backgroundConfig';
 
 const { Dragger } = Upload;
+
+/**
+ * 初始画布的背景预览：跟随默认背景令牌走——
+ * 图片背景（如 gh_img_50 渐变图）铺满；渐变/纯色直接用 previewStyle。
+ */
+const getInitCanvasStyle = (background) => {
+    const definition = getBackgroundDefinition(background);
+    if (definition?.type === 'builtin-image' && definition.fill?.url) {
+        return {
+            backgroundImage: `url(${definition.fill.url})`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+        };
+    }
+    return definition?.previewStyle || undefined;
+};
 
 export default observer(function Init() {
     const getFile = useSetImg(stores);
@@ -33,12 +51,13 @@ export default observer(function Init() {
         }
         getFile(dataURL, 'dataURL');
     };
-    const handleTry = () => {
-        getFile(demoPng, 'dataURL');
-    };
     usePaste((file) => {
         getFile(file);
     });
+    // 进入初始页即"适应画布"：初始卡的基础尺寸就是适应尺寸，重置上次编辑遗留的缩放
+    useEffect(() => {
+        stores.editor.setScale(1);
+    }, []);
 
     return (
         <div
@@ -54,22 +73,21 @@ export default observer(function Init() {
                     <span>释放以添加图片</span>
                 </div>
             )}
-            <div className={cn('shoteasy-empty-state__content', stores.editor.invalid && 'invalid')}>
-                <div className="shoteasy-empty-state__heading">
-                    <div className="shoteasy-empty-state__mark">
-                        <Icon.ImagePlus size={24} />
-                    </div>
-                    <div>
-                        <h1>把截图变成成品</h1>
-                        <p>上传一张图片，开始调整尺寸、背景和外框</p>
-                    </div>
-                </div>
+            {/* 4:3 初始画布卡：默认背景铺面，中间只保留精简上传 UI（点击/拖拽/粘贴 + 截取屏幕）；
+                缩放跟随右下角 Zoom 工具栏（transform，基础尺寸 = 适应画布 = 100%） */}
+            <div
+                className={cn('shoteasy-init-canvas', stores.editor.invalid && 'invalid')}
+                style={{
+                    ...getInitCanvasStyle(stores.option.background),
+                    transform: `scale(${stores.editor.scale / 100})`,
+                }}
+            >
                 <Dragger
                     accept={supportImg.join(',')}
                     name="file"
                     showUploadList={false}
                     beforeUpload={beforeUpload}
-                    rootClassName="shoteasy-upload-card"
+                    rootClassName="shoteasy-upload-card w-full max-w-[440px]"
                 >
                     <div className="shoteasy-upload-card__body">
                         <Icon.ImagePlus size={32} />
@@ -79,21 +97,15 @@ export default observer(function Init() {
                         </div>
                     </div>
                 </Dragger>
-
-                <div className="shoteasy-quick-actions" aria-label="快捷操作">
+                <div className="shoteasy-quick-actions m-0 justify-center">
                     <Tooltip placement="top" arrow={false} title="截取屏幕窗口">
                         <Button type="default" size="middle" icon={<Icon.Camera size={18} />} onClick={onCapture}>
                             截取屏幕
                         </Button>
                     </Tooltip>
                 </div>
-
-                <button className="shoteasy-demo-card" onClick={handleTry} type="button">
-                    <img src={demoPng} alt="示例截图" />
-                    <span>试用示例</span>
-                    <Icon.ArrowUpRight size={16} />
-                </button>
             </div>
+            <Zoom />
         </div>
     );
 });
