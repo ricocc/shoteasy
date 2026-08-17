@@ -4,10 +4,13 @@ import { Button, Dropdown, Tooltip } from 'antd';
 import stores from '@stores';
 
 const items = [
+    { key: 0.25, label: '25%' },
     { key: 0.5, label: '50%' },
     { key: 1, label: '100%' },
     { key: 1.5, label: '150%' },
     { key: 2, label: '200%' },
+    { key: 3, label: '300%' },
+    { key: 5, label: '500%' },
 ];
 
 // 初始页缩放：无 Leafer 画布，直接缩放初始画布卡（CSS transform），25%–400%
