@@ -2,7 +2,7 @@
 
 ## 项目定位
 
-RicoScreenshot（包名 `image-beautifier`）将一张本地图片、粘贴图片或屏幕截图放入可配置画布，叠加背景、留白、圆角、阴影、浏览器/设备外框、标注、水印与 HDR 风格处理，最后导出 PNG、JPG 或 WebP。
+RicoScreenshot（npm 包名 `rico-screenshot`）将一张本地图片、粘贴图片或屏幕截图放入可配置画布，叠加背景、留白、圆角、阴影、浏览器/设备外框、标注、水印与 HDR 风格处理，最后导出 PNG、JPG 或 WebP。
 
 项目提供两种交付形态：
 

@@ -13,17 +13,6 @@ pnpm dev
 
 开发服务器由 Vite 启动。项目没有环境变量、后端服务或数据库迁移。
 
-### 已知的安装阻塞（已修复）
-
-历史问题：`pnpm-lock.yaml` 曾因依赖快照重复写入（如 `eastasianwidth@0.2.0` 在文件中重复出现）属于无效 YAML，`pnpm install --frozen-lockfile` 报 `ERR_PNPM_BROKEN_LOCKFILE: duplicated mapping key`。2026-08-12 的提交 `11cc0ac` 重新生成锁文件后问题消除，当前 `--frozen-lockfile` 可正常通过（已验证 `packages` / `importers` 两段无重复键）。
-
-若今后再次出现同类问题，标准修复流程：
-
-1. 确认使用与 `packageManager` 字段一致的 pnpm 版本（`corepack enable`）；
-2. 删除 `pnpm-lock.yaml` 后执行 `pnpm install` 重新生成；
-3. 审查锁文件 diff（关注依赖版本意外漂移），再以 `pnpm install --frozen-lockfile` 验证后提交。
-
-`pnpm install --lockfile=false` 仅可作本地临时诊断，不具备可复现性，不能视为锁文件已验证，也不应提交生成的临时内容。
 
 ## 常用命令
 
@@ -94,8 +83,7 @@ pnpm dev
 
 ## 已知技术债与风险
 
-- 锁文件损坏，frozen install 失败。
-- README 和部分源码注释在当前文件内容中呈现乱码，需要单独确认原始编码后修复。
+
 - 无自动化测试、CI 配置和浏览器兼容性矩阵。
 - `UndoRedoManager` 未接入，界面也未开放撤销/重做。
 - store 与固定 DOM ID 导致多实例不安全。

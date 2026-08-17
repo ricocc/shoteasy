@@ -5,8 +5,8 @@
 库入口为 `src/index.js`，仅导出命名组件 `ImageBeautifier`。
 
 ```jsx
-import { ImageBeautifier } from 'image-beautifier';
-import 'image-beautifier/lib/style.css';
+import { ImageBeautifier } from 'rico-screenshot';
+import 'rico-screenshot/lib/style.css';
 
 export default function Page() {
   return <ImageBeautifier />;
@@ -19,7 +19,7 @@ export default function Page() {
 pnpm build:lib
 ```
 
-Vite 会以 ES module 形式输出 `lib/image-beautifier.es.js`，样式通常输出为 `lib/style.css`。库构建把 `package.json` 中的所有 dependencies/peerDependencies 标记为 external，因此消费端必须能解析这些运行时依赖。
+Vite 会以 ES module 形式输出 `lib/image-beautifier.es.js`（历史命名，为兼容已发布用户保留），样式通常输出为 `lib/style.css`。库构建把 `package.json` 中的所有 dependencies/peerDependencies 标记为 external，因此消费端必须能解析这些运行时依赖。
 
 ## Props
 
@@ -57,17 +57,17 @@ Vite 会以 ES module 形式输出 `lib/image-beautifier.es.js`，样式通常�
 - 仅支持浏览器环境；模块和组件使用 DOM、Canvas、媒体、剪贴板及 localStorage API。
 - MobX store 是全局单例，不建议同页挂载多个实例。
 - `isDark={false}` 不能强制覆盖 localStorage 中的 `dark`；需要宿主清理 `SHOTEASY_BEAUTIFIER_THEME` 或后续调整主题 API。
-- 内部 UI 文案为英文，当前没有统一国际化接口。
+- 内部 UI 文案为中文，当前没有统一国际化接口。
 - 没有受控 option/shapes API，也没有导出完成、编辑变化等事件回调。
 - 组件使用固定 DOM ID；多实例还会产生重复 ID。
 - 剪贴板、屏幕捕获和 EyeDropper 能力取决于浏览器与安全上下文。
 
 ## 发布信息
 
-- 包名：`image-beautifier`
+- 包名：`rico-screenshot`（产物文件沿用 `image-beautifier.es.js` 历史命名）
 - 当前版本：`1.0.4`
 - 模块格式：ES module
 - 许可证：MIT
 - `package.json#files`：`lib`、`license`、`README.md`
 
-发布脚本 `pnpm release` 会直接执行 `npm publish`。发布前应先修复锁文件、完成构建与 lint，并人工检查 `lib/` 内容；不要在普通文档或代码修改中运行发布命令。
+发布脚本 `pnpm release` 会直接执行 `npm publish`。发布前应完成构建与 lint，并人工检查 `lib/` 内容；不要在普通文档或代码修改中运行发布命令。

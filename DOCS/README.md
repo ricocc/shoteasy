@@ -1,6 +1,6 @@
 # RicoScreenshot / Image Beautifier 文档
 
-本目录记录当前仓库的实际实现。项目是一个运行在浏览器中的截图与图片美化编辑器，也可以构建为 `image-beautifier` React 组件库。它没有后端服务：图片读取、编辑、截屏、复制和导出均在浏览器端完成。
+本目录记录当前仓库的实际实现。项目是一个运行在浏览器中的截图与图片美化编辑器，也可以构建为 npm 组件库（包名 `rico-screenshot`，导出 `ImageBeautifier` React 组件）。它没有后端服务：图片读取、编辑、截屏、复制和导出均在浏览器端完成。
 
 ## 当前版本文档
 
@@ -29,6 +29,3 @@
 | 尺寸预设 | `src/utils/sizeConfig.js` |
 | 背景预设 | `src/utils/backgroundConfig.js` |
 
-## 当前验证状态
-
-`pnpm install --frozen-lockfile` 已可正常通过（历史上的锁文件重复键问题已在 2026-08-12 重新生成锁文件时修复，详情见[开发指南](./development.md#已知的安装阻塞已修复)）。
